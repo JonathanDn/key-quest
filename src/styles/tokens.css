@@ -1,0 +1,72 @@
+:root {
+    --font-ui: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+    --color-text: #ffffff;
+    --color-bg-top: #3f2d92;
+    --color-bg-mid: #24124f;
+    --color-bg-bottom: #120824;
+
+    --color-glass: rgba(255, 255, 255, 0.08);
+    --color-glass-strong: rgba(255, 255, 255, 0.1);
+    --color-glass-stronger: rgba(255, 255, 255, 0.14);
+    --color-glass-active: rgba(255, 255, 255, 0.2);
+
+    --color-border-soft: rgba(255, 255, 255, 0.12);
+    --color-border: rgba(255, 255, 255, 0.14);
+    --color-ring: rgba(255, 255, 255, 0.16);
+
+    --color-button-start-top: #ff8a3d;
+    --color-button-start-bottom: #ff5e7c;
+    --color-button-start-shadow: rgba(255, 94, 124, 0.35);
+
+    --radius-panel: 32px;
+    --radius-panel-mobile: 24px;
+    --radius-target: 36px;
+    --radius-key: 20px;
+    --radius-bubble: 22px;
+    --radius-pill: 999px;
+
+    --space-page: 20px;
+    --space-page-mobile: 14px;
+    --space-panel: 22px;
+    --space-panel-mobile: 18px;
+    --space-section: 18px;
+    --space-gap-sm: 10px;
+    --space-gap-md: 12px;
+    --space-gap-lg: 18px;
+
+    --shadow-panel: 0 28px 80px rgba(0, 0, 0, 0.35);
+    --shadow-keyboard: 0 18px 50px rgba(0, 0, 0, 0.22);
+    --shadow-button: 0 14px 28px var(--color-button-start-shadow);
+
+    --mini-pill-min-height: 48px;
+    --level-row-min-height: 58px;
+    --level-row-min-height-mobile: 120px;
+
+    --target-size: min(360px, 68vw);
+    --target-size-space: min(680px, 84vw);
+    --target-size-space-tablet: min(520px, 90vw);
+    --target-size-space-mobile: min(420px, 92vw);
+
+    --target-min-height-space: 360px;
+    --target-min-height-space-tablet: 260px;
+    --target-min-height-space-mobile: 190px;
+
+    --queue-bubble-size: 64px;
+    --queue-bubble-size-mobile: 54px;
+    --queue-bubble-space-width: 118px;
+    --queue-bubble-space-width-mobile: 98px;
+
+    --keycap-width: 68px;
+    --keycap-height: 76px;
+    --keycap-width-mobile: 56px;
+    --keycap-height-mobile: 64px;
+    --keycap-wide-width: 430px;
+    --keycap-wide-width-mobile: 320px;
+
+    --keyboard-min-width: 820px;
+    --keyboard-min-width-mobile: 700px;
+
+    --transition-fast: 0.08s ease;
+    --transition-ui: 0.15s ease;
+}

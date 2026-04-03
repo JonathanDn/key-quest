@@ -1,0 +1,78 @@
+.keyboard-stage {
+    overflow-x: auto;
+    padding: 18px;
+    border-radius: 30px;
+    background: var(--color-glass);
+    border: 2px solid var(--color-border);
+    box-shadow: var(--shadow-keyboard);
+}
+
+.keyboard {
+    min-width: var(--keyboard-min-width);
+    display: grid;
+    gap: var(--space-gap-md);
+}
+
+.keyboard-row {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-gap-sm);
+}
+
+.keycap {
+    min-width: var(--keycap-width);
+    height: var(--keycap-height);
+    padding: 8px;
+    border-radius: var(--radius-key);
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--color-text);
+    user-select: none;
+    background: var(--color-glass);
+    border: 2px solid var(--color-border-soft);
+    transition:
+            transform var(--transition-fast),
+            box-shadow var(--transition-fast),
+            opacity 0.12s ease,
+            background 0.12s ease;
+}
+
+.keycap.wide {
+    min-width: var(--keycap-wide-width);
+}
+
+.keycap.target {
+    border-color: var(--finger-color);
+    box-shadow: 0 0 22px var(--finger-color);
+    background: var(--color-glass-stronger);
+}
+
+.keycap.pressed {
+    transform: translateY(3px) scale(0.98);
+    background: var(--finger-color);
+    color: #1b1030;
+    border-color: transparent;
+    box-shadow: 0 0 26px var(--finger-color);
+}
+
+.keycap.dimmed {
+    opacity: 0.24;
+}
+
+@media (max-width: 900px) {
+    .keyboard {
+        min-width: var(--keyboard-min-width-mobile);
+    }
+
+    .keycap {
+        min-width: var(--keycap-width-mobile);
+        height: var(--keycap-height-mobile);
+        font-size: 1.2rem;
+    }
+
+    .keycap.wide {
+        min-width: var(--keycap-wide-width-mobile);
+    }
+}
