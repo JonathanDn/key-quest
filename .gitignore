@@ -41,3 +41,5 @@ temp
 
 # Local system files
 Thumbs.db
+
+package-lock.json
