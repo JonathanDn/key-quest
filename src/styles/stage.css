@@ -132,9 +132,9 @@
 
 .message-line {
     position: absolute;
-    top: 12px;
+    top: calc(100% + var(--space-section) / 2);
     left: 50%;
-    transform: translateX(-50%);
+    transform: translate(-50%, -50%);
     z-index: 3;
     min-height: 0;
     padding: 6px 12px;
