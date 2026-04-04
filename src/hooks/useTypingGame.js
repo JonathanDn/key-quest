@@ -1,253 +1,76 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-    LEVELS,
-    FINGER_COLORS,
-    FINGER_LABELS,
-    KEY_TO_FINGER,
-    codeToLabel,
-} from '../game/gameData'
+import { LEVELS, INITIAL_LEVEL_INDEX } from '../game/content/levels'
+import { getLessonEngine } from '../game/engine/lessonEngine'
+import { buildStageView } from '../game/ui/viewModel'
 
 const HAPPY_MESSAGES = ['Nice!', 'Yay!', 'Great!', 'Awesome!', 'You got it!']
+
+const EMPTY_STAGE_STATE = {
+    taskLabel: '',
+    sourceText: '',
+    clipboardText: '',
+    targetText: '',
+}
 
 function randomPick(list) {
     return list[Math.floor(Math.random() * list.length)]
 }
 
-function getTargetSignature(target) {
-    if (target.type === 'combo') {
-        return `combo:${target.codes.join('+')}`
-    }
-
-    return `single:${target.code}`
+function getStageState(level, target) {
+    return getLessonEngine(level).getView?.(target) ?? EMPTY_STAGE_STATE
 }
 
-function pickNonRepeatingTarget(pool, previousSignature) {
-    if (!pool.length) {
-        return null
-    }
-
-    if (pool.length === 1) {
-        return pool[0]
-    }
-
-    let nextTarget = pool[Math.floor(Math.random() * pool.length)]
-    let nextSignature = getTargetSignature(nextTarget)
-
-    while (nextSignature === previousSignature) {
-        nextTarget = pool[Math.floor(Math.random() * pool.length)]
-        nextSignature = getTargetSignature(nextTarget)
-    }
-
-    return nextTarget
-}
-
-function pickNonRepeatingPrompt(pool, previousPrompt) {
-    if (!pool.length) {
-        return ''
-    }
-
-    if (pool.length === 1) {
-        return pool[0]
-    }
-
-    let nextPrompt = pool[Math.floor(Math.random() * pool.length)]
-
-    while (nextPrompt === previousPrompt) {
-        nextPrompt = pool[Math.floor(Math.random() * pool.length)]
-    }
-
-    return nextPrompt
-}
-
-function charToCode(char) {
-    if (char === ' ') {
-        return 'Space'
-    }
-
-    if (/^[a-z]$/i.test(char)) {
-        return `Key${char.toUpperCase()}`
-    }
-
-    if (char === ',') {
-        return 'Comma'
-    }
-
-    if (char === '.') {
-        return 'Period'
-    }
-
-    if (char === ';') {
-        return 'Semicolon'
-    }
-
-    if (char === '/') {
-        return 'Slash'
-    }
-
-    throw new Error(`Unsupported prompt character: ${char}`)
-}
-
-function createPromptTargets(level) {
-    const promptCount = level.promptCount ?? 3
-    const targets = []
-    let previousPrompt = null
-
-    for (let promptIndex = 0; promptIndex < promptCount; promptIndex += 1) {
-        const promptText = pickNonRepeatingPrompt(level.promptPool, previousPrompt)
-        previousPrompt = promptText
-
-        Array.from(promptText).forEach((char, charIndex) => {
-            targets.push({
-                type: 'single',
-                code: charToCode(char),
-                id: `${level.id}-prompt-${promptIndex}-char-${charIndex}-${Math.random().toString(16).slice(2)}`,
-                stepText: promptText,
-                stepCharIndex: charIndex,
-                stepId: `${level.id}-prompt-${promptIndex}`,
-            })
-        })
-    }
-
-    return targets
-}
-
-function createMissionTargets(level) {
-    return level.missions.map((mission, index) => ({
-        ...mission,
-        id: `${level.id}-mission-${index}-${Math.random().toString(16).slice(2)}`,
-    }))
-}
-
-function createRound(level) {
-    if (level.playMode === 'wordPowers' && level.missions?.length) {
-        return createMissionTargets(level)
-    }
-
-    if (level.promptPool?.length) {
-        return createPromptTargets(level)
-    }
-
-    const round = []
-    let previousSignature = null
-
-    if (level.targets?.length) {
-        for (let index = 0; index < level.roundSize; index += 1) {
-            const target = pickNonRepeatingTarget(level.targets, previousSignature)
-
-            round.push({
-                ...target,
-                id: `${level.id}-${index}-${Math.random().toString(16).slice(2)}`,
-            })
-
-            previousSignature = getTargetSignature(target)
-        }
-
-        return round
-    }
-
-    for (let index = 0; index < level.roundSize; index += 1) {
-        const keyPool = level.keys.map((code) => ({ type: 'single', code }))
-        const target = pickNonRepeatingTarget(keyPool, previousSignature)
-
-        round.push({
-            ...target,
-            id: `${level.id}-${index}-${Math.random().toString(16).slice(2)}`,
-        })
-
-        previousSignature = getTargetSignature(target)
-    }
-
-    return round
-}
-
-function getSingleHelperText(code) {
-    return `Use ${FINGER_LABELS[KEY_TO_FINGER[code]]}`
-}
-
-function getTargetGuidance(level, target) {
-    if (!target) {
-        return ''
-    }
-
-    if (level.playMode === 'wordPowers') {
-        if (target.taskLabel && target.helper) {
-            return `${target.taskLabel} · ${target.helper}`
-        }
-
-        return target.taskLabel ?? target.helper ?? target.label ?? ''
-    }
-
-    if (target.stepText) {
-        return `Type "${target.stepText}"`
-    }
-
-    if (target.type === 'combo') {
-        return target.helper ?? target.label
-    }
-
-    return `Tap ${codeToLabel[target.code] ?? target.code}`
-}
-
-function getLevelStartMessage(level, firstTarget) {
-    return getTargetGuidance(level, firstTarget) || 'Watch the glowing key'
-}
-
-function getWordPowerView(target) {
-    return {
-        taskLabel: target?.taskLabel ?? '',
-        sourceText: target?.sourceText ?? '',
-        clipboardText: target?.clipboardText ?? '',
-        targetText: target?.targetText ?? '',
-    }
+function getStartMessage(level, target) {
+    return getLessonEngine(level).getGuidance?.(target) || 'Watch the glowing key'
 }
 
 export function useTypingGame() {
-    const initialLevelIndex = 20
-    const initialLevel = LEVELS[initialLevelIndex]
-    const initialRound = createRound(initialLevel)
+    const initialLevel = LEVELS[INITIAL_LEVEL_INDEX]
+    const initialEngine = getLessonEngine(initialLevel)
+    const initialRound = initialEngine.createRound(initialLevel)
 
-    const [levelIndex, setLevelIndex] = useState(initialLevelIndex)
+    const [levelIndex, setLevelIndex] = useState(INITIAL_LEVEL_INDEX)
     const [round, setRound] = useState(initialRound)
     const [currentIndex, setCurrentIndex] = useState(0)
     const [pressedCode, setPressedCode] = useState('')
     const [pressedKeys, setPressedKeys] = useState([])
     const [stars, setStars] = useState(0)
-    const [message, setMessage] = useState(getLevelStartMessage(initialLevel, initialRound[0]))
+    const [message, setMessage] = useState(getStartMessage(initialLevel, initialRound[0]))
     const [playing, setPlaying] = useState(true)
     const [complete, setComplete] = useState(false)
-    const [wordPowerState, setWordPowerState] = useState(getWordPowerView(initialRound[0]))
+    const [stageState, setStageState] = useState(getStageState(initialLevel, initialRound[0]))
 
     const pressedKeysRef = useRef(new Set())
 
     const level = LEVELS[levelIndex]
+    const engine = getLessonEngine(level)
     const currentTarget = round[currentIndex]
     const nextTargets = useMemo(() => round.slice(currentIndex, currentIndex + 5), [round, currentIndex])
 
     useEffect(() => {
-        if (level.playMode === 'wordPowers' && currentTarget) {
-            setWordPowerState(getWordPowerView(currentTarget))
-        }
-    }, [level.playMode, currentTarget])
+        setStageState(getStageState(level, currentTarget))
+    }, [level, currentTarget])
 
     useEffect(() => {
         if (!playing || complete || !currentTarget) {
             return
         }
 
-        setMessage(getTargetGuidance(level, currentTarget))
-    }, [level, currentTarget, playing, complete])
+        setMessage(engine.getGuidance?.(currentTarget) ?? '')
+    }, [engine, currentTarget, playing, complete])
 
-    const helperText = currentTarget
-        ? currentTarget.type === 'combo'
-            ? currentTarget.helper
-            : getSingleHelperText(currentTarget.code)
-        : ''
+    const targetColor = engine.getTargetColor?.(currentTarget) ?? '#ffffff'
 
-    const targetColor = currentTarget
-        ? currentTarget.type === 'combo'
-            ? FINGER_COLORS[KEY_TO_FINGER[currentTarget.triggerCode]]
-            : FINGER_COLORS[KEY_TO_FINGER[currentTarget.code]]
-        : '#ffffff'
+    const ui = useMemo(() => {
+        return buildStageView({
+            level,
+            currentTarget,
+            nextTargets,
+            pressedKeys,
+            stageState,
+            complete,
+        })
+    }, [level, currentTarget, nextTargets, pressedKeys, stageState, complete])
 
     const advanceRound = useCallback((successMessage) => {
         setStars((value) => value + 1)
@@ -267,7 +90,7 @@ export function useTypingGame() {
                 event.preventDefault()
             }
 
-            if (playing && currentTarget?.type === 'combo' && currentTarget.codes.includes(normalizedCode)) {
+            if (playing && engine.shouldPreventDefault?.(currentTarget, normalizedCode)) {
                 event.preventDefault()
             }
 
@@ -282,39 +105,26 @@ export function useTypingGame() {
                 return
             }
 
-            if (currentTarget.type === 'single') {
-                if (normalizedCode === currentTarget.code) {
-                    advanceRound(randomPick(HAPPY_MESSAGES))
-                } else {
-                    setMessage(`Try ${codeToLabel[currentTarget.code] ?? currentTarget.code}`)
-                }
+            const result = engine.handleKeyDown?.({
+                level,
+                target: currentTarget,
+                normalizedCode,
+                pressedKeys: new Set(pressedKeysRef.current),
+                currentView: stageState,
+            }) ?? { type: 'none' }
 
+            if (result.nextView) {
+                setStageState(result.nextView)
+            }
+
+            if (result.type === 'success') {
+                advanceRound(result.successMessage ?? randomPick(HAPPY_MESSAGES))
                 return
             }
 
-            const nextPressed = new Set(pressedKeysRef.current)
-            const allCodesDown = currentTarget.codes.every((code) => nextPressed.has(code))
-            const isTriggerPress = normalizedCode === currentTarget.triggerCode
-            const isPartOfCombo = currentTarget.codes.includes(normalizedCode)
-
-            if (allCodesDown && isTriggerPress) {
-                if (level.playMode === 'wordPowers' && currentTarget.afterState) {
-                    setWordPowerState((previous) => ({
-                        ...previous,
-                        ...currentTarget.afterState,
-                    }))
-                }
-
-                advanceRound(currentTarget.successMessage ?? currentTarget.powerName ?? randomPick(HAPPY_MESSAGES))
-                return
+            if (result.type === 'message' && result.message) {
+                setMessage(result.message)
             }
-
-            if (isPartOfCombo) {
-                setMessage(currentTarget.helper)
-                return
-            }
-
-            setMessage(`Try ${currentTarget.label}`)
         }
 
         function onKeyUp(event) {
@@ -335,7 +145,7 @@ export function useTypingGame() {
             window.removeEventListener('keydown', onKeyDown)
             window.removeEventListener('keyup', onKeyUp)
         }
-    }, [playing, complete, currentTarget, level.playMode, advanceRound])
+    }, [playing, complete, currentTarget, engine, level, stageState, advanceRound])
 
     useEffect(() => {
         if (playing && currentIndex >= round.length && round.length > 0) {
@@ -347,7 +157,8 @@ export function useTypingGame() {
 
     const goToLevel = useCallback((index) => {
         const nextLevel = LEVELS[index]
-        const nextRound = createRound(nextLevel)
+        const nextEngine = getLessonEngine(nextLevel)
+        const nextRound = nextEngine.createRound(nextLevel)
 
         pressedKeysRef.current.clear()
         setPressedKeys([])
@@ -358,8 +169,8 @@ export function useTypingGame() {
         setStars(0)
         setComplete(false)
         setPlaying(true)
-        setWordPowerState(getWordPowerView(nextRound[0]))
-        setMessage(getLevelStartMessage(nextLevel, nextRound[0]))
+        setStageState(getStageState(nextLevel, nextRound[0]))
+        setMessage(getStartMessage(nextLevel, nextRound[0]))
     }, [])
 
     const goToNextLevel = useCallback(() => {
@@ -372,17 +183,14 @@ export function useTypingGame() {
         levels: LEVELS,
         level,
         levelIndex,
-        currentTarget,
-        nextTargets,
         pressedCode,
         pressedKeys,
         stars,
         message,
         playing,
         complete,
-        helperText,
         targetColor,
-        wordPowerState,
+        ui,
         goToLevel,
         goToNextLevel,
     }

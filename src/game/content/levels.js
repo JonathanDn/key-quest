@@ -30,7 +30,7 @@ const COPY_POWER_TARGET = {
     triggerCode: 'KeyC',
     label: 'CTRL + C',
     shortLabel: 'CTRL+C',
-    helper: 'Hold Ctrl, tap C',
+    helper: 'Hold Ctrl + C',
     powerName: 'Copy Power',
 }
 
@@ -40,7 +40,7 @@ const PASTE_POWER_TARGET = {
     triggerCode: 'KeyV',
     label: 'CTRL + V',
     shortLabel: 'CTRL+V',
-    helper: 'Hold Ctrl, tap V',
+    helper: 'Hold Ctrl + V',
     powerName: 'Paste Power',
 }
 
@@ -50,111 +50,11 @@ const UNDO_POWER_TARGET = {
     triggerCode: 'KeyZ',
     label: 'CTRL + Z',
     shortLabel: 'CTRL+Z',
-    helper: 'Hold Ctrl, tap Z',
+    helper: 'Hold Ctrl + Z',
     powerName: 'Undo Power',
 }
 
-export const KEYBOARD_ROWS = [
-    [
-        { code: 'KeyQ', label: 'Q' },
-        { code: 'KeyW', label: 'W' },
-        { code: 'KeyE', label: 'E' },
-        { code: 'KeyR', label: 'R' },
-        { code: 'KeyT', label: 'T' },
-        { code: 'KeyY', label: 'Y' },
-        { code: 'KeyU', label: 'U' },
-        { code: 'KeyI', label: 'I' },
-        { code: 'KeyO', label: 'O' },
-        { code: 'KeyP', label: 'P' },
-    ],
-    [
-        { code: 'KeyA', label: 'A' },
-        { code: 'KeyS', label: 'S' },
-        { code: 'KeyD', label: 'D' },
-        { code: 'KeyF', label: 'F' },
-        { code: 'KeyG', label: 'G' },
-        { code: 'KeyH', label: 'H' },
-        { code: 'KeyJ', label: 'J' },
-        { code: 'KeyK', label: 'K' },
-        { code: 'KeyL', label: 'L' },
-        { code: 'Semicolon', label: ';' },
-    ],
-    [
-        { code: 'KeyZ', label: 'Z' },
-        { code: 'KeyX', label: 'X' },
-        { code: 'KeyC', label: 'C' },
-        { code: 'KeyV', label: 'V' },
-        { code: 'KeyB', label: 'B' },
-        { code: 'KeyN', label: 'N' },
-        { code: 'KeyM', label: 'M' },
-        { code: 'Comma', label: ',' },
-        { code: 'Period', label: '.' },
-        { code: 'Slash', label: '/' },
-    ],
-    [
-        { code: 'ControlLeft', label: 'CTRL' },
-        { code: 'Space', label: 'SPACE', wide: true },
-    ],
-]
-
-export const FINGER_COLORS = {
-    lp: '#ff8a3d',
-    lr: '#ffd84d',
-    lm: '#54e3c2',
-    li: '#58c7ff',
-    ri: '#8f8cff',
-    rm: '#c78cff',
-    rr: '#ff8bc2',
-    rp: '#ff7c93',
-    th: '#5ee36d',
-}
-
-export const FINGER_LABELS = {
-    lp: 'left pinky',
-    lr: 'left ring',
-    lm: 'left middle',
-    li: 'left pointer',
-    ri: 'right pointer',
-    rm: 'right middle',
-    rr: 'right ring',
-    rp: 'right pinky',
-    th: 'thumb',
-}
-
-export const KEY_TO_FINGER = {
-    ControlLeft: 'lp',
-    KeyQ: 'lp',
-    KeyA: 'lp',
-    KeyZ: 'lp',
-    KeyW: 'lr',
-    KeyS: 'lr',
-    KeyX: 'lr',
-    KeyE: 'lm',
-    KeyD: 'lm',
-    KeyC: 'lm',
-    KeyR: 'li',
-    KeyF: 'li',
-    KeyV: 'li',
-    KeyT: 'li',
-    KeyG: 'li',
-    KeyB: 'li',
-    KeyY: 'ri',
-    KeyH: 'ri',
-    KeyN: 'ri',
-    KeyU: 'ri',
-    KeyJ: 'ri',
-    KeyM: 'ri',
-    KeyI: 'rm',
-    KeyK: 'rm',
-    Comma: 'rm',
-    KeyO: 'rr',
-    KeyL: 'rr',
-    Period: 'rr',
-    KeyP: 'rp',
-    Semicolon: 'rp',
-    Slash: 'rp',
-    Space: 'th',
-}
+export const INITIAL_LEVEL_INDEX = 20
 
 export const LEVELS = [
     {
@@ -296,7 +196,13 @@ export const LEVELS = [
         title: 'Story Time',
         challenge: 'Type short phrases and sentences',
         keys: [...FULL_ALPHA_KEYS, ...SPACE_KEY],
-        promptPool: ['the cat can run', 'we jump in the sun', 'the rabbit is quick', 'you can do it', 'the dog is my pal'],
+        promptPool: [
+            'the cat can run',
+            'we jump in the sun',
+            'the rabbit is quick',
+            'you can do it',
+            'the dog is my pal',
+        ],
         promptCount: 3,
     },
 
@@ -626,7 +532,3 @@ export const LEVELS = [
         ],
     },
 ]
-
-export const codeToLabel = Object.fromEntries(
-    KEYBOARD_ROWS.flat().map((key) => [key.code, key.label]),
-)
