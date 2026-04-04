@@ -49,12 +49,22 @@
     background: var(--color-glass-stronger);
 }
 
-.keycap.pressed {
-    transform: translateY(3px) scale(0.98);
+.keycap.combo-part {
+    opacity: 1;
+    border-color: var(--finger-color);
+    box-shadow: 0 0 18px rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.keycap.held {
     background: var(--finger-color);
     color: #1b1030;
     border-color: transparent;
     box-shadow: 0 0 26px var(--finger-color);
+}
+
+.keycap.pressed {
+    transform: translateY(3px) scale(0.98);
 }
 
 .keycap.dimmed {

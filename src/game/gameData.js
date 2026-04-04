@@ -40,10 +40,35 @@ const WORD_KEYS_MIX = [
     'KeyZ', 'Comma', 'Period', 'Semicolon', 'Slash',
 ]
 
-const COPY_POWER_KEYS = ['ControlLeft', 'KeyC']
-const PASTE_POWER_KEYS = ['ControlLeft', 'KeyV']
-const UNDO_POWER_KEYS = ['ControlLeft', 'KeyZ']
-const POWER_MIX_KEYS = ['ControlLeft', 'KeyC', 'KeyV', 'KeyZ']
+const COPY_POWER_TARGET = {
+    type: 'combo',
+    codes: ['ControlLeft', 'KeyC'],
+    triggerCode: 'KeyC',
+    label: 'CTRL + C',
+    shortLabel: 'CTRL+C',
+    helper: 'Hold Ctrl, tap C',
+    powerName: 'Copy Power',
+}
+
+const PASTE_POWER_TARGET = {
+    type: 'combo',
+    codes: ['ControlLeft', 'KeyV'],
+    triggerCode: 'KeyV',
+    label: 'CTRL + V',
+    shortLabel: 'CTRL+V',
+    helper: 'Hold Ctrl, tap V',
+    powerName: 'Paste Power',
+}
+
+const UNDO_POWER_TARGET = {
+    type: 'combo',
+    codes: ['ControlLeft', 'KeyZ'],
+    triggerCode: 'KeyZ',
+    label: 'CTRL + Z',
+    shortLabel: 'CTRL+Z',
+    helper: 'Hold Ctrl, tap Z',
+    powerName: 'Undo Power',
+}
 
 export const KEYBOARD_ROWS = [
     [
@@ -82,7 +107,10 @@ export const KEYBOARD_ROWS = [
         { code: 'Period', label: '.' },
         { code: 'Slash', label: '/' },
     ],
-    [{ code: 'Space', label: 'SPACE', wide: true }],
+    [
+        { code: 'ControlLeft', label: 'CTRL' },
+        { code: 'Space', label: 'SPACE', wide: true },
+    ],
 ]
 
 export const FINGER_COLORS = {
@@ -110,6 +138,7 @@ export const FINGER_LABELS = {
 }
 
 export const KEY_TO_FINGER = {
+    ControlLeft: 'lp',
     KeyQ: 'lp',
     KeyA: 'lp',
     KeyZ: 'lp',
@@ -148,7 +177,7 @@ export const LEVELS = [
         id: 'home-friends',
         world: 1,
         icon: '🏠',
-        title: 'Home',
+        title: 'Home 1',
         challenge: 'Home row only',
         keys: [...HOME_KEYS],
         roundSize: 10,
@@ -289,8 +318,9 @@ export const LEVELS = [
         title: 'Copy',
         challenge: 'Learn Ctrl + C',
         power: 'copy',
-        keys: [...COPY_POWER_KEYS],
-        roundSize: 10,
+        keys: ['ControlLeft', 'KeyC'],
+        targets: [COPY_POWER_TARGET],
+        roundSize: 1,
     },
     {
         id: 'paste-power',
@@ -299,8 +329,9 @@ export const LEVELS = [
         title: 'Paste',
         challenge: 'Learn Ctrl + V',
         power: 'paste',
-        keys: [...PASTE_POWER_KEYS],
-        roundSize: 10,
+        keys: ['ControlLeft', 'KeyV'],
+        targets: [PASTE_POWER_TARGET],
+        roundSize: 1,
     },
     {
         id: 'undo-power',
@@ -309,8 +340,9 @@ export const LEVELS = [
         title: 'Undo',
         challenge: 'Learn Ctrl + Z',
         power: 'undo',
-        keys: [...UNDO_POWER_KEYS],
-        roundSize: 10,
+        keys: ['ControlLeft', 'KeyZ'],
+        targets: [UNDO_POWER_TARGET],
+        roundSize: 1,
     },
     {
         id: 'power-mix',
@@ -319,7 +351,8 @@ export const LEVELS = [
         title: 'Powers',
         challenge: 'Mix copy, paste, and undo',
         power: 'mix',
-        keys: [...POWER_MIX_KEYS],
+        keys: ['ControlLeft', 'KeyC', 'KeyV', 'KeyZ'],
+        targets: [COPY_POWER_TARGET, PASTE_POWER_TARGET, UNDO_POWER_TARGET],
         roundSize: 12,
     },
     {
@@ -329,7 +362,15 @@ export const LEVELS = [
         title: 'Hero',
         challenge: 'Typing and powers together',
         power: 'final',
-        keys: [...FULL_ALPHA_KEYS, ...SPACE_KEY, ...POWER_MIX_KEYS],
+        keys: [...FULL_ALPHA_KEYS, ...SPACE_KEY, 'ControlLeft'],
+        targets: [
+            { type: 'single', code: 'KeyF' },
+            { type: 'single', code: 'KeyJ' },
+            { type: 'single', code: 'Space' },
+            COPY_POWER_TARGET,
+            PASTE_POWER_TARGET,
+            UNDO_POWER_TARGET,
+        ],
         roundSize: 20,
     },
 ]

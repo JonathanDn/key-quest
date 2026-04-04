@@ -14,6 +14,32 @@ const WORLD_META = [
   { world: 4, icon: '🌈', title: 'Mix' },
 ]
 
+const WIDE_DISPLAY_CODES = new Set(['Space', 'ControlLeft'])
+
+function renderTargetLabel(target) {
+  if (!target) {
+    return ''
+  }
+
+  if (target.type === 'combo') {
+    return target.label
+  }
+
+  return codeToLabel[target.code] ?? target.code
+}
+
+function renderQueueLabel(target) {
+  if (!target) {
+    return ''
+  }
+
+  if (target.type === 'combo') {
+    return target.shortLabel ?? target.label
+  }
+
+  return codeToLabel[target.code] ?? target.code
+}
+
 function App() {
   const {
     levels,
@@ -22,11 +48,12 @@ function App() {
     currentTarget,
     nextTargets,
     pressedCode,
+    pressedKeys,
     stars,
     message,
     playing,
     complete,
-    helperFinger,
+    helperText,
     targetColor,
     goToLevel,
     goToNextLevel,
@@ -47,6 +74,9 @@ function App() {
   const currentLevelInWorld = levelIndex - worldStartIndex + 1
   const hasNextLevel = levelIndex < levels.length - 1
   const gameFinished = complete && !hasNextLevel
+  const isComboTarget = currentTarget?.type === 'combo'
+  const isWideTarget = isComboTarget || WIDE_DISPLAY_CODES.has(currentTarget?.code)
+  const heldKeys = new Set(pressedKeys)
 
   useEffect(() => {
     if (!complete || !hasNextLevel) {
@@ -147,11 +177,27 @@ function App() {
               <div
                   className={[
                     'big-target',
-                    currentTarget?.code === 'Space' ? 'wide' : '',
+                    isWideTarget ? 'wide' : '',
+                    isComboTarget ? 'combo' : '',
                   ].join(' ')}
                   style={{ '--target-color': targetColor }}
               >
-                {currentTarget ? codeToLabel[currentTarget.code] : complete ? '🎉' : '▶'}
+                {currentTarget ? (
+                    isComboTarget ? (
+                        <div className="combo-target">
+                          {currentTarget.codes.map((code, index) => (
+                              <React.Fragment key={code}>
+                                {index > 0 ? <span className="combo-plus">+</span> : null}
+                                <span className={heldKeys.has(code) ? 'combo-chip held' : 'combo-chip'}>
+                          {codeToLabel[code] ?? code}
+                        </span>
+                              </React.Fragment>
+                          ))}
+                        </div>
+                    ) : (
+                        renderTargetLabel(currentTarget)
+                    )
+                ) : complete ? '🎉' : '▶'}
               </div>
 
               <div className="helper-bubble">
@@ -159,9 +205,13 @@ function App() {
                     <>
                   <span
                       className="finger-dot"
-                      style={{ background: FINGER_COLORS[KEY_TO_FINGER[currentTarget.code]] }}
+                      style={{
+                        background: isComboTarget
+                            ? FINGER_COLORS[KEY_TO_FINGER[currentTarget.triggerCode]]
+                            : FINGER_COLORS[KEY_TO_FINGER[currentTarget.code]],
+                      }}
                   />
-                      <span>Use {helperFinger}</span>
+                      <span>{helperText}</span>
                     </>
                 ) : complete && hasNextLevel && nextCountdown !== null ? (
                     <span>Next in {nextCountdown}s</span>
@@ -174,21 +224,28 @@ function App() {
             </div>
 
             <div className="queue-row">
-              {nextTargets.map((item, index) => (
-                  <div
-                      key={item.id}
-                      className={[
-                        'queue-bubble',
-                        index === 0 ? 'active' : '',
-                        item.code === 'Space' ? 'wide' : '',
-                      ].join(' ')}
-                      style={{
-                        '--bubble-color': FINGER_COLORS[KEY_TO_FINGER[item.code]],
-                      }}
-                  >
-                    {codeToLabel[item.code]}
-                  </div>
-              ))}
+              {nextTargets.map((item, index) => {
+                const isComboItem = item.type === 'combo'
+
+                return (
+                    <div
+                        key={item.id}
+                        className={[
+                          'queue-bubble',
+                          index === 0 ? 'active' : '',
+                          isComboItem || WIDE_DISPLAY_CODES.has(item.code) ? 'wide' : '',
+                          isComboItem ? 'combo' : '',
+                        ].join(' ')}
+                        style={{
+                          '--bubble-color': item.type === 'combo'
+                              ? FINGER_COLORS[KEY_TO_FINGER[item.triggerCode]]
+                              : FINGER_COLORS[KEY_TO_FINGER[item.code]],
+                        }}
+                    >
+                      {renderQueueLabel(item)}
+                    </div>
+                )
+              })}
             </div>
 
             <div className="action-row">
@@ -211,10 +268,12 @@ function App() {
               {KEYBOARD_ROWS.map((row, rowIndex) => (
                   <div className="keyboard-row" key={`row-${rowIndex}`}>
                     {row.map((key) => {
-                      const isTarget = currentTarget?.code === key.code
+                      const isTarget = currentTarget?.type === 'single' && currentTarget.code === key.code
                       const isPressed = pressedCode === key.code
                       const isInLevel = level.keys.includes(key.code)
                       const finger = KEY_TO_FINGER[key.code]
+                      const isComboPart = currentTarget?.type === 'combo' && currentTarget.codes.includes(key.code)
+                      const isHeld = heldKeys.has(key.code)
 
                       return (
                           <div
@@ -223,6 +282,8 @@ function App() {
                                 'keycap',
                                 key.wide ? 'wide' : '',
                                 isTarget ? 'target' : '',
+                                isComboPart ? 'combo-part' : '',
+                                isHeld ? 'held' : '',
                                 isPressed ? 'pressed' : '',
                                 !isInLevel ? 'dimmed' : '',
                               ].join(' ')}
