@@ -8,10 +8,11 @@ import {
 } from './game/gameData'
 
 const WORLD_META = [
-  { world: 1, icon: '🏠', title: 'Home' },
-  { world: 2, icon: '☁️', title: 'Up' },
-  { world: 3, icon: '🌱', title: 'Down' },
-  { world: 4, icon: '🌈', title: 'Mix' },
+  { world: 1, icon: '🏠', title: 'Basics' },
+  { world: 2, icon: '🖐️', title: 'Fingers' },
+  { world: 3, icon: '📖', title: 'Words' },
+  { world: 4, icon: '✨', title: 'Power Keys' },
+  { world: 5, icon: '📝', title: 'Word Powers' },
 ]
 
 const WIDE_DISPLAY_CODES = new Set(['Space', 'ControlLeft'])
@@ -40,6 +41,26 @@ function renderQueueLabel(target) {
   return codeToLabel[target.code] ?? target.code
 }
 
+function renderVisibleChar(char) {
+  if (char === ' ') {
+    return '␣'
+  }
+
+  return char
+}
+
+function renderWordChips(text) {
+  if (!text) {
+    return <span className="word-slot-placeholder">Empty</span>
+  }
+
+  return text.split(' ').map((part, index) => (
+      <span className="word-chip" key={`${part}-${index}`}>
+      {part}
+    </span>
+  ))
+}
+
 function App() {
   const {
     levels,
@@ -55,12 +76,17 @@ function App() {
     complete,
     helperText,
     targetColor,
+    wordPowerState,
     goToLevel,
     goToNextLevel,
   } = useTypingGame()
 
   const gameAreaRef = useRef(null)
   const [nextCountdown, setNextCountdown] = useState(null)
+  const [clipboardBurst, setClipboardBurst] = useState(false)
+  const [targetBurst, setTargetBurst] = useState(false)
+  const previousClipboardRef = useRef(wordPowerState?.clipboardText ?? '')
+  const previousTargetRef = useRef(wordPowerState?.targetText ?? '')
 
   useEffect(() => {
     if (playing) {
@@ -75,8 +101,56 @@ function App() {
   const hasNextLevel = levelIndex < levels.length - 1
   const gameFinished = complete && !hasNextLevel
   const isComboTarget = currentTarget?.type === 'combo'
-  const isWideTarget = isComboTarget || WIDE_DISPLAY_CODES.has(currentTarget?.code)
+  const isTextStepTarget = Boolean(currentTarget?.stepText)
+  const showWordPowerBoard = level.playMode === 'wordPowers'
+  const isWideTarget = isComboTarget || isTextStepTarget || WIDE_DISPLAY_CODES.has(currentTarget?.code)
   const heldKeys = new Set(pressedKeys)
+
+  const currentStepText = currentTarget?.stepText ?? ''
+  const currentStepCharIndex = currentTarget?.stepCharIndex ?? 0
+  const stepDoneText = currentStepText.slice(0, currentStepCharIndex)
+  const stepCurrentChar = currentStepText.charAt(currentStepCharIndex)
+  const stepUpcomingText = currentStepText.slice(currentStepCharIndex + 1)
+
+  const wordPowerAction = currentTarget?.powerName ?? ''
+  const highlightSource = showWordPowerBoard && wordPowerAction === 'Copy Power'
+  const highlightClipboard = showWordPowerBoard && (wordPowerAction === 'Copy Power' || wordPowerAction === 'Paste Power')
+  const highlightTarget = showWordPowerBoard && (wordPowerAction === 'Paste Power' || wordPowerAction === 'Undo Power')
+
+  useEffect(() => {
+    if (!showWordPowerBoard) {
+      previousClipboardRef.current = wordPowerState?.clipboardText ?? ''
+      previousTargetRef.current = wordPowerState?.targetText ?? ''
+      setClipboardBurst(false)
+      setTargetBurst(false)
+      return
+    }
+
+    let clipboardTimeout
+    let targetTimeout
+
+    if (previousClipboardRef.current !== (wordPowerState?.clipboardText ?? '')) {
+      setClipboardBurst(true)
+      clipboardTimeout = window.setTimeout(() => {
+        setClipboardBurst(false)
+      }, 450)
+    }
+
+    if (previousTargetRef.current !== (wordPowerState?.targetText ?? '')) {
+      setTargetBurst(true)
+      targetTimeout = window.setTimeout(() => {
+        setTargetBurst(false)
+      }, 450)
+    }
+
+    previousClipboardRef.current = wordPowerState?.clipboardText ?? ''
+    previousTargetRef.current = wordPowerState?.targetText ?? ''
+
+    return () => {
+      window.clearTimeout(clipboardTimeout)
+      window.clearTimeout(targetTimeout)
+    }
+  }, [showWordPowerBoard, wordPowerState])
 
   useEffect(() => {
     if (!complete || !hasNextLevel) {
@@ -108,6 +182,25 @@ function App() {
 
   const showNextButton = complete && hasNextLevel
   const showPlayAgainButton = gameFinished
+
+  useEffect(() => {
+    if (!showNextButton) {
+      return
+    }
+
+    function onKeyDown(event) {
+      if (event.code === 'Enter' || event.code === 'NumpadEnter') {
+        event.preventDefault()
+        goToNextLevel()
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [showNextButton, goToNextLevel])
 
   return (
       <div className="game-shell">
@@ -174,53 +267,138 @@ function App() {
             <div className="message-line">{message}</div>
 
             <div className="target-area">
-              <div
-                  className={[
-                    'big-target',
-                    isWideTarget ? 'wide' : '',
-                    isComboTarget ? 'combo' : '',
-                  ].join(' ')}
-                  style={{ '--target-color': targetColor }}
-              >
-                {currentTarget ? (
-                    isComboTarget ? (
-                        <div className="combo-target">
-                          {currentTarget.codes.map((code, index) => (
-                              <React.Fragment key={code}>
-                                {index > 0 ? <span className="combo-plus">+</span> : null}
-                                <span className={heldKeys.has(code) ? 'combo-chip held' : 'combo-chip'}>
-                          {codeToLabel[code] ?? code}
-                        </span>
-                              </React.Fragment>
-                          ))}
-                        </div>
-                    ) : (
-                        renderTargetLabel(currentTarget)
-                    )
-                ) : complete ? '🎉' : '▶'}
-              </div>
+              {showWordPowerBoard ? (
+                  <div className="word-power-stage" style={{ '--target-color': targetColor }}>
+                    <div className="word-power-header">
+                      <div className="word-power-task-pill">{wordPowerState.taskLabel}</div>
+                      <div className="word-power-action-badge">{renderTargetLabel(currentTarget)}</div>
+                    </div>
 
-              <div className="helper-bubble">
-                {currentTarget ? (
-                    <>
-                  <span
-                      className="finger-dot"
-                      style={{
-                        background: isComboTarget
-                            ? FINGER_COLORS[KEY_TO_FINGER[currentTarget.triggerCode]]
-                            : FINGER_COLORS[KEY_TO_FINGER[currentTarget.code]],
-                      }}
-                  />
-                      <span>{helperText}</span>
-                    </>
-                ) : complete && hasNextLevel && nextCountdown !== null ? (
-                    <span>Next in {nextCountdown}s</span>
-                ) : complete ? (
-                    <span>All done!</span>
-                ) : (
-                    <span>Watch the glowing key</span>
-                )}
-              </div>
+                    <div className="word-power-lab">
+                      <div className={highlightSource ? 'word-zone source active' : 'word-zone source'}>
+                        <div className="word-zone-label">Copy from</div>
+                        <div className="word-zone-slot">
+                          {renderWordChips(wordPowerState.sourceText)}
+                        </div>
+                      </div>
+
+                      <div className="word-flow-arrow" aria-hidden="true">
+                        →
+                      </div>
+
+                      <div
+                          className={[
+                            'word-zone',
+                            'clipboard',
+                            highlightClipboard ? 'active' : '',
+                            clipboardBurst ? 'burst' : '',
+                          ].join(' ')}
+                      >
+                        <div className="word-zone-label">Clipboard</div>
+                        <div className="word-zone-slot clipboard-slot">
+                          {renderWordChips(wordPowerState.clipboardText)}
+                        </div>
+                      </div>
+
+                      <div className="word-flow-arrow" aria-hidden="true">
+                        →
+                      </div>
+
+                      <div
+                          className={[
+                            'word-zone',
+                            'target',
+                            highlightTarget ? 'active' : '',
+                            targetBurst ? 'burst' : '',
+                          ].join(' ')}
+                      >
+                        <div className="word-zone-label">Paste here</div>
+                        <div className="word-zone-slot target-slot">
+                          {renderWordChips(wordPowerState.targetText)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="helper-bubble">
+                      {currentTarget ? (
+                          <>
+                      <span
+                          className="finger-dot"
+                          style={{
+                            background: isComboTarget
+                                ? FINGER_COLORS[KEY_TO_FINGER[currentTarget.triggerCode]]
+                                : FINGER_COLORS[KEY_TO_FINGER[currentTarget.code]],
+                          }}
+                      />
+                            <span>{helperText}</span>
+                          </>
+                      ) : complete && hasNextLevel && nextCountdown !== null ? (
+                          <span>Next in {nextCountdown}s</span>
+                      ) : complete ? (
+                          <span>All done!</span>
+                      ) : (
+                          <span>Watch the glowing key</span>
+                      )}
+                    </div>
+                  </div>
+              ) : (
+                  <>
+                    <div
+                        className={[
+                          'big-target',
+                          isWideTarget ? 'wide' : '',
+                          isComboTarget ? 'combo' : '',
+                          isTextStepTarget ? 'text-step' : '',
+                        ].join(' ')}
+                        style={{ '--target-color': targetColor }}
+                    >
+                      {currentTarget ? (
+                          isComboTarget ? (
+                              <div className="combo-target">
+                                {currentTarget.codes.map((code, index) => (
+                                    <React.Fragment key={code}>
+                                      {index > 0 ? <span className="combo-plus">+</span> : null}
+                                      <span className={heldKeys.has(code) ? 'combo-chip held' : 'combo-chip'}>
+                              {codeToLabel[code] ?? code}
+                            </span>
+                                    </React.Fragment>
+                                ))}
+                              </div>
+                          ) : isTextStepTarget ? (
+                              <div className="word-target">
+                                <span className="word-done">{stepDoneText}</span>
+                                <span className="word-current">{renderVisibleChar(stepCurrentChar)}</span>
+                                <span className="word-upcoming">{stepUpcomingText}</span>
+                              </div>
+                          ) : (
+                              renderTargetLabel(currentTarget)
+                          )
+                      ) : complete ? '🎉' : '▶'}
+                    </div>
+
+                    <div className="helper-bubble">
+                      {currentTarget ? (
+                          <>
+                      <span
+                          className="finger-dot"
+                          style={{
+                            background: isComboTarget
+                                ? FINGER_COLORS[KEY_TO_FINGER[currentTarget.triggerCode]]
+                                : FINGER_COLORS[KEY_TO_FINGER[currentTarget.code]],
+                          }}
+                      />
+                            <span>{helperText}</span>
+                          </>
+                      ) : complete && hasNextLevel && nextCountdown !== null ? (
+                          <span>Next in {nextCountdown}s</span>
+                      ) : complete ? (
+                          <span>All done!</span>
+                      ) : (
+                          <span>Watch the glowing key</span>
+                      )}
+                    </div>
+                  </>
+              )}
             </div>
 
             <div className="queue-row">

@@ -41,7 +41,92 @@ function pickNonRepeatingTarget(pool, previousSignature) {
     return nextTarget
 }
 
+function pickNonRepeatingPrompt(pool, previousPrompt) {
+    if (!pool.length) {
+        return ''
+    }
+
+    if (pool.length === 1) {
+        return pool[0]
+    }
+
+    let nextPrompt = pool[Math.floor(Math.random() * pool.length)]
+
+    while (nextPrompt === previousPrompt) {
+        nextPrompt = pool[Math.floor(Math.random() * pool.length)]
+    }
+
+    return nextPrompt
+}
+
+function charToCode(char) {
+    if (char === ' ') {
+        return 'Space'
+    }
+
+    if (/^[a-z]$/i.test(char)) {
+        return `Key${char.toUpperCase()}`
+    }
+
+    if (char === ',') {
+        return 'Comma'
+    }
+
+    if (char === '.') {
+        return 'Period'
+    }
+
+    if (char === ';') {
+        return 'Semicolon'
+    }
+
+    if (char === '/') {
+        return 'Slash'
+    }
+
+    throw new Error(`Unsupported prompt character: ${char}`)
+}
+
+function createPromptTargets(level) {
+    const promptCount = level.promptCount ?? 3
+    const targets = []
+    let previousPrompt = null
+
+    for (let promptIndex = 0; promptIndex < promptCount; promptIndex += 1) {
+        const promptText = pickNonRepeatingPrompt(level.promptPool, previousPrompt)
+        previousPrompt = promptText
+
+        Array.from(promptText).forEach((char, charIndex) => {
+            targets.push({
+                type: 'single',
+                code: charToCode(char),
+                id: `${level.id}-prompt-${promptIndex}-char-${charIndex}-${Math.random().toString(16).slice(2)}`,
+                stepText: promptText,
+                stepCharIndex: charIndex,
+                stepId: `${level.id}-prompt-${promptIndex}`,
+            })
+        })
+    }
+
+    return targets
+}
+
+function createMissionTargets(level) {
+    return level.missions.map((mission, index) => ({
+        ...mission,
+        id: `${level.id}-mission-${index}-${Math.random().toString(16).slice(2)}`,
+    }))
+}
+
 function createRound(level) {
+    if (level.playMode === 'wordPowers' && level.missions?.length) {
+        return createMissionTargets(level)
+    }
+
+    if (level.promptPool?.length) {
+        return createPromptTargets(level)
+    }
+
     const round = []
     let previousSignature = null
 
@@ -79,22 +164,56 @@ function getSingleHelperText(code) {
     return `Use ${FINGER_LABELS[KEY_TO_FINGER[code]]}`
 }
 
+function getLevelStartMessage(level, firstTarget) {
+    if (level.playMode === 'wordPowers') {
+        return firstTarget?.taskLabel ?? 'Use the word powers'
+    }
+
+    if (level.promptPool?.length) {
+        return 'Type the word'
+    }
+
+    if (level.targets?.length) {
+        return 'Use the power keys'
+    }
+
+    return 'Tap the glowing key'
+}
+
+function getWordPowerView(target) {
+    return {
+        taskLabel: target?.taskLabel ?? '',
+        sourceText: target?.sourceText ?? '',
+        clipboardText: target?.clipboardText ?? '',
+        targetText: target?.targetText ?? '',
+    }
+}
+
 export function useTypingGame() {
-    const [levelIndex, setLevelIndex] = useState(0)
-    const [round, setRound] = useState(() => createRound(LEVELS[0]))
+    const initialRound = createRound(LEVELS[20])
+
+    const [levelIndex, setLevelIndex] = useState(20)
+    const [round, setRound] = useState(initialRound)
     const [currentIndex, setCurrentIndex] = useState(0)
     const [pressedCode, setPressedCode] = useState('')
     const [pressedKeys, setPressedKeys] = useState([])
     const [stars, setStars] = useState(0)
-    const [message, setMessage] = useState('Tap the glowing key')
+    const [message, setMessage] = useState(getLevelStartMessage(LEVELS[0], initialRound[0]))
     const [playing, setPlaying] = useState(true)
     const [complete, setComplete] = useState(false)
+    const [wordPowerState, setWordPowerState] = useState(getWordPowerView(initialRound[0]))
 
     const pressedKeysRef = useRef(new Set())
 
     const level = LEVELS[levelIndex]
     const currentTarget = round[currentIndex]
     const nextTargets = useMemo(() => round.slice(currentIndex, currentIndex + 5), [round, currentIndex])
+
+    useEffect(() => {
+        if (level.playMode === 'wordPowers' && currentTarget) {
+            setWordPowerState(getWordPowerView(currentTarget))
+        }
+    }, [level.playMode, currentTarget])
 
     const helperText = currentTarget
         ? currentTarget.type === 'combo'
@@ -157,7 +276,14 @@ export function useTypingGame() {
             const isPartOfCombo = currentTarget.codes.includes(normalizedCode)
 
             if (allCodesDown && isTriggerPress) {
-                advanceRound(currentTarget.powerName ?? randomPick(HAPPY_MESSAGES))
+                if (level.playMode === 'wordPowers' && currentTarget.afterState) {
+                    setWordPowerState((previous) => ({
+                        ...previous,
+                        ...currentTarget.afterState,
+                    }))
+                }
+
+                advanceRound(currentTarget.successMessage ?? currentTarget.powerName ?? randomPick(HAPPY_MESSAGES))
                 return
             }
 
@@ -187,7 +313,7 @@ export function useTypingGame() {
             window.removeEventListener('keydown', onKeyDown)
             window.removeEventListener('keyup', onKeyUp)
         }
-    }, [playing, complete, currentTarget, advanceRound])
+    }, [playing, complete, currentTarget, level.playMode, advanceRound])
 
     useEffect(() => {
         if (playing && currentIndex >= round.length && round.length > 0) {
@@ -198,16 +324,20 @@ export function useTypingGame() {
     }, [playing, currentIndex, round.length])
 
     const goToLevel = useCallback((index) => {
+        const nextLevel = LEVELS[index]
+        const nextRound = createRound(nextLevel)
+
         pressedKeysRef.current.clear()
         setPressedKeys([])
         setPressedCode('')
         setLevelIndex(index)
-        setRound(createRound(LEVELS[index]))
+        setRound(nextRound)
         setCurrentIndex(0)
         setStars(0)
         setComplete(false)
         setPlaying(true)
-        setMessage('Tap the glowing key')
+        setWordPowerState(getWordPowerView(nextRound[0]))
+        setMessage(getLevelStartMessage(nextLevel, nextRound[0]))
     }, [])
 
     const goToNextLevel = useCallback(() => {
@@ -230,6 +360,7 @@ export function useTypingGame() {
         complete,
         helperText,
         targetColor,
+        wordPowerState,
         goToLevel,
         goToNextLevel,
     }
