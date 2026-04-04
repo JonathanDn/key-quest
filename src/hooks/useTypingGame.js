@@ -164,20 +164,32 @@ function getSingleHelperText(code) {
     return `Use ${FINGER_LABELS[KEY_TO_FINGER[code]]}`
 }
 
-function getLevelStartMessage(level, firstTarget) {
+function getTargetGuidance(level, target) {
+    if (!target) {
+        return ''
+    }
+
     if (level.playMode === 'wordPowers') {
-        return firstTarget?.taskLabel ?? 'Use the word powers'
+        if (target.taskLabel && target.helper) {
+            return `${target.taskLabel} · ${target.helper}`
+        }
+
+        return target.taskLabel ?? target.helper ?? target.label ?? ''
     }
 
-    if (level.promptPool?.length) {
-        return 'Type the word'
+    if (target.stepText) {
+        return `Type "${target.stepText}"`
     }
 
-    if (level.targets?.length) {
-        return 'Use the power keys'
+    if (target.type === 'combo') {
+        return target.helper ?? target.label
     }
 
-    return 'Tap the glowing key'
+    return `Tap ${codeToLabel[target.code] ?? target.code}`
+}
+
+function getLevelStartMessage(level, firstTarget) {
+    return getTargetGuidance(level, firstTarget) || 'Watch the glowing key'
 }
 
 function getWordPowerView(target) {
@@ -190,15 +202,17 @@ function getWordPowerView(target) {
 }
 
 export function useTypingGame() {
-    const initialRound = createRound(LEVELS[20])
+    const initialLevelIndex = 20
+    const initialLevel = LEVELS[initialLevelIndex]
+    const initialRound = createRound(initialLevel)
 
-    const [levelIndex, setLevelIndex] = useState(20)
+    const [levelIndex, setLevelIndex] = useState(initialLevelIndex)
     const [round, setRound] = useState(initialRound)
     const [currentIndex, setCurrentIndex] = useState(0)
     const [pressedCode, setPressedCode] = useState('')
     const [pressedKeys, setPressedKeys] = useState([])
     const [stars, setStars] = useState(0)
-    const [message, setMessage] = useState(getLevelStartMessage(LEVELS[0], initialRound[0]))
+    const [message, setMessage] = useState(getLevelStartMessage(initialLevel, initialRound[0]))
     const [playing, setPlaying] = useState(true)
     const [complete, setComplete] = useState(false)
     const [wordPowerState, setWordPowerState] = useState(getWordPowerView(initialRound[0]))
@@ -214,6 +228,14 @@ export function useTypingGame() {
             setWordPowerState(getWordPowerView(currentTarget))
         }
     }, [level.playMode, currentTarget])
+
+    useEffect(() => {
+        if (!playing || complete || !currentTarget) {
+            return
+        }
+
+        setMessage(getTargetGuidance(level, currentTarget))
+    }, [level, currentTarget, playing, complete])
 
     const helperText = currentTarget
         ? currentTarget.type === 'combo'

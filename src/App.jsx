@@ -103,7 +103,8 @@ function App() {
   const isComboTarget = currentTarget?.type === 'combo'
   const isTextStepTarget = Boolean(currentTarget?.stepText)
   const showWordPowerBoard = level.playMode === 'wordPowers'
-  const isWideTarget = isComboTarget || isTextStepTarget || WIDE_DISPLAY_CODES.has(currentTarget?.code)
+  const isWideTarget =
+      isComboTarget || isTextStepTarget || WIDE_DISPLAY_CODES.has(currentTarget?.code)
   const heldKeys = new Set(pressedKeys)
 
   const currentStepText = currentTarget?.stepText ?? ''
@@ -114,8 +115,12 @@ function App() {
 
   const wordPowerAction = currentTarget?.powerName ?? ''
   const highlightSource = showWordPowerBoard && wordPowerAction === 'Copy Power'
-  const highlightClipboard = showWordPowerBoard && (wordPowerAction === 'Copy Power' || wordPowerAction === 'Paste Power')
-  const highlightTarget = showWordPowerBoard && (wordPowerAction === 'Paste Power' || wordPowerAction === 'Undo Power')
+  const highlightClipboard =
+      showWordPowerBoard &&
+      (wordPowerAction === 'Copy Power' || wordPowerAction === 'Paste Power')
+  const highlightTarget =
+      showWordPowerBoard &&
+      (wordPowerAction === 'Paste Power' || wordPowerAction === 'Undo Power')
 
   useEffect(() => {
     if (!showWordPowerBoard) {
@@ -228,7 +233,10 @@ function App() {
                   ))}
                 </div>
 
-                <div className="level-progress" aria-label={`Level ${currentLevelInWorld} of ${currentWorldLevels.length}`}>
+                <div
+                    className="level-progress"
+                    aria-label={`Level ${currentLevelInWorld} of ${currentWorldLevels.length}`}
+                >
                   <div className="level-trail">
                     {currentWorldLevels.map((entry, index) => {
                       const isDone = index < currentLevelInWorld - 1
@@ -264,18 +272,31 @@ function App() {
               <div className="mini-pill top-bar-pill">⭐ {stars}</div>
             </div>
 
-            <div className="message-line">{message}</div>
+            <div className="guidance-row">
+              <div className="message-line">{message}</div>
+            </div>
 
             <div className="target-area">
               {showWordPowerBoard ? (
-                  <div className="word-power-stage" style={{ '--target-color': targetColor }}>
+                  <div
+                      className="word-power-stage"
+                      style={{ '--target-color': targetColor }}
+                  >
                     <div className="word-power-header">
-                      <div className="word-power-task-pill">{wordPowerState.taskLabel}</div>
-                      <div className="word-power-action-badge">{renderTargetLabel(currentTarget)}</div>
+                      <div className="word-power-task-pill">
+                        {wordPowerState.taskLabel}
+                      </div>
+                      <div className="word-power-action-badge">
+                        {renderTargetLabel(currentTarget)}
+                      </div>
                     </div>
 
                     <div className="word-power-lab">
-                      <div className={highlightSource ? 'word-zone source active' : 'word-zone source'}>
+                      <div
+                          className={
+                            highlightSource ? 'word-zone source active' : 'word-zone source'
+                          }
+                      >
                         <div className="word-zone-label">Copy from</div>
                         <div className="word-zone-slot">
                           {renderWordChips(wordPowerState.sourceText)}
@@ -358,7 +379,9 @@ function App() {
                                 {currentTarget.codes.map((code, index) => (
                                     <React.Fragment key={code}>
                                       {index > 0 ? <span className="combo-plus">+</span> : null}
-                                      <span className={heldKeys.has(code) ? 'combo-chip held' : 'combo-chip'}>
+                                      <span
+                                          className={heldKeys.has(code) ? 'combo-chip held' : 'combo-chip'}
+                                      >
                               {codeToLabel[code] ?? code}
                             </span>
                                     </React.Fragment>
@@ -367,13 +390,19 @@ function App() {
                           ) : isTextStepTarget ? (
                               <div className="word-target">
                                 <span className="word-done">{stepDoneText}</span>
-                                <span className="word-current">{renderVisibleChar(stepCurrentChar)}</span>
+                                <span className="word-current">
+                          {renderVisibleChar(stepCurrentChar)}
+                        </span>
                                 <span className="word-upcoming">{stepUpcomingText}</span>
                               </div>
                           ) : (
                               renderTargetLabel(currentTarget)
                           )
-                      ) : complete ? '🎉' : '▶'}
+                      ) : complete ? (
+                          '🎉'
+                      ) : (
+                          '▶'
+                      )}
                     </div>
 
                     <div className="helper-bubble">
@@ -415,9 +444,10 @@ function App() {
                           isComboItem ? 'combo' : '',
                         ].join(' ')}
                         style={{
-                          '--bubble-color': item.type === 'combo'
-                              ? FINGER_COLORS[KEY_TO_FINGER[item.triggerCode]]
-                              : FINGER_COLORS[KEY_TO_FINGER[item.code]],
+                          '--bubble-color':
+                              item.type === 'combo'
+                                  ? FINGER_COLORS[KEY_TO_FINGER[item.triggerCode]]
+                                  : FINGER_COLORS[KEY_TO_FINGER[item.code]],
                         }}
                     >
                       {renderQueueLabel(item)}
@@ -446,11 +476,14 @@ function App() {
               {KEYBOARD_ROWS.map((row, rowIndex) => (
                   <div className="keyboard-row" key={`row-${rowIndex}`}>
                     {row.map((key) => {
-                      const isTarget = currentTarget?.type === 'single' && currentTarget.code === key.code
+                      const isTarget =
+                          currentTarget?.type === 'single' && currentTarget.code === key.code
                       const isPressed = pressedCode === key.code
                       const isInLevel = level.keys.includes(key.code)
                       const finger = KEY_TO_FINGER[key.code]
-                      const isComboPart = currentTarget?.type === 'combo' && currentTarget.codes.includes(key.code)
+                      const isComboPart =
+                          currentTarget?.type === 'combo' &&
+                          currentTarget.codes.includes(key.code)
                       const isHeld = heldKeys.has(key.code)
 
                       return (

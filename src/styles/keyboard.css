@@ -1,6 +1,6 @@
 .keyboard-stage {
     overflow-x: auto;
-    padding: 18px;
+    padding: clamp(14px, 1.6vh, 18px);
     border-radius: 30px;
     background: var(--color-glass);
     border: 2px solid var(--color-border);
@@ -10,13 +10,13 @@
 .keyboard {
     min-width: var(--keyboard-min-width);
     display: grid;
-    gap: var(--space-gap-md);
+    gap: clamp(8px, 1vh, var(--space-gap-md));
 }
 
 .keyboard-row {
     display: flex;
     justify-content: center;
-    gap: var(--space-gap-sm);
+    gap: clamp(8px, 0.9vh, var(--space-gap-sm));
 }
 
 .keycap {
