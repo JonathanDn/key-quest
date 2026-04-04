@@ -1,0 +1,36 @@
+<!-- public/favicon.svg -->
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="bg" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#35157B"/>
+            <stop offset="1" stop-color="#1C0A47"/>
+        </linearGradient>
+        <linearGradient id="key" x1="16" y1="14" x2="45" y2="50" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#F6ECFF"/>
+            <stop offset="1" stop-color="#C48DFF"/>
+        </linearGradient>
+        <linearGradient id="shine" x1="47" y1="10" x2="60" y2="23" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#FFF7B0"/>
+            <stop offset="1" stop-color="#FF8A3D"/>
+        </linearGradient>
+        <filter id="shadow" x="8" y="10" width="50" height="50" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+            <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#0E0524" flood-opacity="0.5"/>
+        </filter>
+        <filter id="sparkleGlow" x="40" y="3" width="24" height="24" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+            <feDropShadow dx="0" dy="0" stdDeviation="2" flood-color="#FF8A3D" flood-opacity="0.9"/>
+        </filter>
+    </defs>
+
+    <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#bg)"/>
+
+    <g filter="url(#shadow)">
+        <rect x="12" y="13" width="40" height="40" rx="12" fill="url(#key)"/>
+        <rect x="12.75" y="13.75" width="38.5" height="38.5" rx="11.25" stroke="#F9F4FF" stroke-opacity="0.65" stroke-width="1.5"/>
+        <path d="M18 21C18 18.7909 19.7909 17 22 17H39C42.866 17 46 20.134 46 24V27" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="3" stroke-linecap="round"/>
+        <path d="M30.6 25.2C24.5268 25.2 20.8 29.3225 20.8 34.4408C20.8 40.3398 25.0898 44.6 31.056 44.6C33.2136 44.6 35.246 44.0523 36.9054 43.0436L39.2272 45.3654C39.8552 45.9934 40.8733 45.9934 41.5013 45.3654L42.7654 44.1013C43.3934 43.4733 43.3934 42.4552 42.7654 41.8272L40.8654 39.9272C41.6393 38.3467 42.08 36.5593 42.08 34.664C42.08 29.1133 37.6907 25.2 30.6 25.2ZM31.12 29.84C35.0112 29.84 37.12 31.8965 37.12 34.72C37.12 37.5435 35.0112 39.92 31.408 39.92C27.7471 39.92 25.76 37.4465 25.76 34.4C25.76 31.3535 27.8624 29.84 31.12 29.84Z" fill="#3D1F79"/>
+    </g>
+
+    <g filter="url(#sparkleGlow)">
+        <path d="M52 8L54.4515 13.5485L60 16L54.4515 18.4515L52 24L49.5485 18.4515L44 16L49.5485 13.5485L52 8Z" fill="url(#shine)"/>
+    </g>
+</svg>
