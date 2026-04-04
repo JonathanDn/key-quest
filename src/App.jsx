@@ -278,25 +278,16 @@ function App() {
 
             <div className="target-area">
               {showWordPowerBoard ? (
-                  <div
-                      className="word-power-stage"
-                      style={{ '--target-color': targetColor }}
-                  >
+                  <div className="word-power-stage" style={{ '--target-color': targetColor }}>
                     <div className="word-power-header">
-                      <div className="word-power-task-pill">
-                        {wordPowerState.taskLabel}
-                      </div>
+                      <div className="word-power-task-pill">{wordPowerState.taskLabel}</div>
                       <div className="word-power-action-badge">
                         {renderTargetLabel(currentTarget)}
                       </div>
                     </div>
 
                     <div className="word-power-lab">
-                      <div
-                          className={
-                            highlightSource ? 'word-zone source active' : 'word-zone source'
-                          }
-                      >
+                      <div className={highlightSource ? 'word-zone source active' : 'word-zone source'}>
                         <div className="word-zone-label">Copy from</div>
                         <div className="word-zone-slot">
                           {renderWordChips(wordPowerState.sourceText)}
@@ -340,27 +331,6 @@ function App() {
                       </div>
                     </div>
 
-                    <div className="helper-bubble">
-                      {currentTarget ? (
-                          <>
-                      <span
-                          className="finger-dot"
-                          style={{
-                            background: isComboTarget
-                                ? FINGER_COLORS[KEY_TO_FINGER[currentTarget.triggerCode]]
-                                : FINGER_COLORS[KEY_TO_FINGER[currentTarget.code]],
-                          }}
-                      />
-                            <span>{helperText}</span>
-                          </>
-                      ) : complete && hasNextLevel && nextCountdown !== null ? (
-                          <span>Next in {nextCountdown}s</span>
-                      ) : complete ? (
-                          <span>All done!</span>
-                      ) : (
-                          <span>Watch the glowing key</span>
-                      )}
-                    </div>
                   </div>
               ) : (
                   <>
@@ -379,9 +349,7 @@ function App() {
                                 {currentTarget.codes.map((code, index) => (
                                     <React.Fragment key={code}>
                                       {index > 0 ? <span className="combo-plus">+</span> : null}
-                                      <span
-                                          className={heldKeys.has(code) ? 'combo-chip held' : 'combo-chip'}
-                                      >
+                                      <span className={heldKeys.has(code) ? 'combo-chip held' : 'combo-chip'}>
                               {codeToLabel[code] ?? code}
                             </span>
                                     </React.Fragment>
@@ -390,9 +358,7 @@ function App() {
                           ) : isTextStepTarget ? (
                               <div className="word-target">
                                 <span className="word-done">{stepDoneText}</span>
-                                <span className="word-current">
-                          {renderVisibleChar(stepCurrentChar)}
-                        </span>
+                                <span className="word-current">{renderVisibleChar(stepCurrentChar)}</span>
                                 <span className="word-upcoming">{stepUpcomingText}</span>
                               </div>
                           ) : (
@@ -402,28 +368,6 @@ function App() {
                           '🎉'
                       ) : (
                           '▶'
-                      )}
-                    </div>
-
-                    <div className="helper-bubble">
-                      {currentTarget ? (
-                          <>
-                      <span
-                          className="finger-dot"
-                          style={{
-                            background: isComboTarget
-                                ? FINGER_COLORS[KEY_TO_FINGER[currentTarget.triggerCode]]
-                                : FINGER_COLORS[KEY_TO_FINGER[currentTarget.code]],
-                          }}
-                      />
-                            <span>{helperText}</span>
-                          </>
-                      ) : complete && hasNextLevel && nextCountdown !== null ? (
-                          <span>Next in {nextCountdown}s</span>
-                      ) : complete ? (
-                          <span>All done!</span>
-                      ) : (
-                          <span>Watch the glowing key</span>
                       )}
                     </div>
                   </>
