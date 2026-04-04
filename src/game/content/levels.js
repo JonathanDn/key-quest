@@ -54,7 +54,7 @@ const UNDO_POWER_TARGET = {
     powerName: 'Undo Power',
 }
 
-export const INITIAL_LEVEL_INDEX = 20
+export const INITIAL_LEVEL_INDEX = 0
 
 export const LEVELS = [
     {
