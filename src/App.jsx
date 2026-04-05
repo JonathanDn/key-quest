@@ -37,16 +37,27 @@ function App() {
   } = useTypingGame()
 
   const gameAreaRef = useRef(null)
+  const targetAreaRef = useRef(null)
   const targetVisualRef = useRef(null)
   const starCounterRef = useRef(null)
+  const worldBadgeRefs = useRef({})
+  const levelNodeRefs = useRef({})
 
   const [nextCountdown, setNextCountdown] = useState(null)
+  const [worldCountdown, setWorldCountdown] = useState(null)
   const [clipboardBurst, setClipboardBurst] = useState(false)
   const [targetBurst, setTargetBurst] = useState(false)
   const [showSuccessBurst, setShowSuccessBurst] = useState(false)
   const [showPraiseChip, setShowPraiseChip] = useState(false)
   const [flyingStar, setFlyingStar] = useState(null)
   const [starPulse, setStarPulse] = useState(false)
+  const [levelCompleteFx, setLevelCompleteFx] = useState({ active: false, phase: 'idle' })
+  const [levelTravelStars, setLevelTravelStars] = useState([])
+  const [showLevelBanner, setShowLevelBanner] = useState(false)
+  const [worldCompleteFx, setWorldCompleteFx] = useState({ active: false, phase: 'idle' })
+  const [worldTravelStars, setWorldTravelStars] = useState([])
+  const [showPortalCard, setShowPortalCard] = useState(false)
+  const [showWorldCta, setShowWorldCta] = useState(false)
 
   const previousClipboardRef = useRef(ui.wordPower.clipboardText)
   const previousTargetRef = useRef(ui.wordPower.targetText)
@@ -62,7 +73,13 @@ function App() {
   const worldStartIndex = levels.findIndex((entry) => entry.world === currentWorld)
   const currentLevelInWorld = levelIndex - worldStartIndex + 1
   const hasNextLevel = levelIndex < levels.length - 1
+  const nextLevel = hasNextLevel ? levels[levelIndex + 1] : null
+  const nextWorld = nextLevel?.world ?? null
   const gameFinished = complete && !hasNextLevel
+  const unlockedWorldMeta = WORLD_META.find((entry) => entry.world === nextWorld) ?? null
+  const isWorldBoundary = complete && (gameFinished || nextWorld !== currentWorld)
+  const isStandardLevelComplete = complete && !isWorldBoundary
+  const queueDimmed = levelCompleteFx.active || worldCompleteFx.active
 
   useEffect(() => {
     if (!ui.showWordPowerBoard) {
@@ -141,8 +158,170 @@ function App() {
     }
   }, [successFx.id])
 
+  function spawnLevelTravelStars() {
+    const targetRect = targetAreaRef.current?.getBoundingClientRect()
+    const nodeRect = levelNodeRefs.current[level.id]?.getBoundingClientRect()
+
+    if (!targetRect || !nodeRect) {
+      setLevelTravelStars([])
+      return
+    }
+
+    const startX = targetRect.left + targetRect.width / 2
+    const startY = targetRect.top + targetRect.height * 0.44
+    const endX = nodeRect.left + nodeRect.width / 2
+    const endY = nodeRect.top + nodeRect.height / 2
+
+    const configs = [
+      { glyph: '⭐', offsetX: -36, offsetY: 12, launchX: -18, launchY: -48, endX: -8, endY: -4, delay: 0, size: 1.14 },
+      { glyph: '✨', offsetX: 0, offsetY: -20, launchX: 0, launchY: -58, endX: 0, endY: -10, delay: 80, size: 1.0 },
+      { glyph: '⭐', offsetX: 38, offsetY: 8, launchX: 18, launchY: -48, endX: 8, endY: -2, delay: 160, size: 1.1 },
+    ]
+
+    setLevelTravelStars(
+        configs.map((config, index) => {
+          const starStartX = startX + config.offsetX
+          const starStartY = startY + config.offsetY
+          const starEndX = endX + config.endX
+          const starEndY = endY + config.endY
+
+          return {
+            id: `level-${levelIndex}-${index}`,
+            glyph: config.glyph,
+            startX: starStartX,
+            startY: starStartY,
+            launchX: config.launchX,
+            launchY: config.launchY,
+            deltaX: starEndX - starStartX,
+            deltaY: starEndY - starStartY,
+            delay: config.delay,
+            size: config.size,
+          }
+        })
+    )
+  }
+
+  function spawnWorldTravelStars() {
+    const targetRect = targetAreaRef.current?.getBoundingClientRect()
+    const badgeRect = worldBadgeRefs.current[currentWorld]?.getBoundingClientRect()
+
+    if (!targetRect || !badgeRect) {
+      setWorldTravelStars([])
+      return
+    }
+
+    const startX = targetRect.left + targetRect.width / 2
+    const startY = targetRect.top + targetRect.height * 0.42
+    const endX = badgeRect.left + badgeRect.width / 2
+    const endY = badgeRect.top + badgeRect.height / 2
+
+    const configs = [
+      { glyph: '⭐', offsetX: -84, offsetY: 16, launchX: -28, launchY: -54, endX: -18, endY: -8, delay: 0, size: 1.28 },
+      { glyph: '✨', offsetX: -36, offsetY: -26, launchX: -12, launchY: -68, endX: 6, endY: -14, delay: 70, size: 1.08 },
+      { glyph: '⭐', offsetX: 0, offsetY: 28, launchX: 0, launchY: -74, endX: -4, endY: 8, delay: 130, size: 1.34 },
+      { glyph: '✨', offsetX: 38, offsetY: -18, launchX: 16, launchY: -62, endX: 14, endY: -10, delay: 190, size: 1.08 },
+      { glyph: '⭐', offsetX: 86, offsetY: 10, launchX: 28, launchY: -54, endX: 22, endY: 2, delay: 250, size: 1.2 },
+    ]
+
+    setWorldTravelStars(
+        configs.map((config, index) => {
+          const starStartX = startX + config.offsetX
+          const starStartY = startY + config.offsetY
+          const starEndX = endX + config.endX
+          const starEndY = endY + config.endY
+
+          return {
+            id: `world-${levelIndex}-${currentWorld}-${index}`,
+            glyph: config.glyph,
+            startX: starStartX,
+            startY: starStartY,
+            launchX: config.launchX,
+            launchY: config.launchY,
+            deltaX: starEndX - starStartX,
+            deltaY: starEndY - starStartY,
+            delay: config.delay,
+            size: config.size,
+          }
+        })
+    )
+  }
+
   useEffect(() => {
-    if (!complete || !hasNextLevel) {
+    if (complete) {
+      return
+    }
+
+    setLevelCompleteFx({ active: false, phase: 'idle' })
+    setLevelTravelStars([])
+    setShowLevelBanner(false)
+    setWorldCompleteFx({ active: false, phase: 'idle' })
+    setWorldTravelStars([])
+    setShowPortalCard(false)
+    setShowWorldCta(false)
+    setNextCountdown(null)
+    setWorldCountdown(null)
+  }, [complete, levelIndex])
+
+  useEffect(() => {
+    if (!isStandardLevelComplete) {
+      return
+    }
+
+    setLevelCompleteFx({ active: true, phase: 'burst' })
+    setLevelTravelStars([])
+    setShowLevelBanner(false)
+
+    const trailTimer = window.setTimeout(() => {
+      setLevelCompleteFx({ active: true, phase: 'trail' })
+      setShowLevelBanner(true)
+      spawnLevelTravelStars()
+    }, 180)
+
+    const readyTimer = window.setTimeout(() => {
+      setLevelCompleteFx({ active: true, phase: 'ready' })
+    }, 900)
+
+    return () => {
+      window.clearTimeout(trailTimer)
+      window.clearTimeout(readyTimer)
+    }
+  }, [isStandardLevelComplete, level.id, levelIndex])
+
+  useEffect(() => {
+    if (!isWorldBoundary) {
+      return
+    }
+
+    setWorldCompleteFx({ active: true, phase: 'burst' })
+    setWorldTravelStars([])
+    setShowPortalCard(false)
+    setShowWorldCta(false)
+
+    const burstTimer = window.setTimeout(() => {
+      setWorldCompleteFx({ active: true, phase: 'travel' })
+      spawnWorldTravelStars()
+    }, 220)
+
+    const portalTimer = window.setTimeout(() => {
+      setWorldCompleteFx({ active: true, phase: 'portal' })
+      setWorldTravelStars([])
+      setShowPortalCard(true)
+    }, 920)
+
+    const readyTimer = window.setTimeout(() => {
+      setWorldCompleteFx({ active: true, phase: 'ready' })
+      setShowWorldCta(true)
+    }, 1500)
+
+    return () => {
+      window.clearTimeout(burstTimer)
+      window.clearTimeout(portalTimer)
+      window.clearTimeout(readyTimer)
+    }
+  }, [isWorldBoundary, currentWorld, levelIndex])
+
+  useEffect(() => {
+    if (!complete || !hasNextLevel || isWorldBoundary) {
       setNextCountdown(null)
       return
     }
@@ -167,20 +346,61 @@ function App() {
       window.clearTimeout(timeoutId)
       window.clearInterval(intervalId)
     }
-  }, [complete, hasNextLevel, goToNextLevel])
-
-  const showNextButton = complete && hasNextLevel
-  const showPlayAgainButton = gameFinished
+  }, [complete, hasNextLevel, isWorldBoundary, goToNextLevel])
 
   useEffect(() => {
-    if (!showNextButton) {
+    if (!showWorldCta || !hasNextLevel || !isWorldBoundary) {
+      setWorldCountdown(null)
+      return
+    }
+
+    setWorldCountdown(4)
+
+    const timeoutId = window.setTimeout(() => {
+      goToNextLevel()
+    }, 4000)
+
+    const intervalId = window.setInterval(() => {
+      setWorldCountdown((value) => {
+        if (value === null) {
+          return null
+        }
+
+        return value > 1 ? value - 1 : 1
+      })
+    }, 1000)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+      window.clearInterval(intervalId)
+    }
+  }, [showWorldCta, hasNextLevel, isWorldBoundary, goToNextLevel])
+
+  const showNextButton = complete && hasNextLevel && !isWorldBoundary
+  const showWorldNextButton = hasNextLevel && isWorldBoundary && showWorldCta
+  const showPlayAgainButton = gameFinished && showWorldCta
+
+  useEffect(() => {
+    const canUseEnter = showNextButton || showWorldNextButton || showPlayAgainButton
+
+    if (!canUseEnter) {
       return
     }
 
     function onKeyDown(event) {
-      if (event.code === 'Enter' || event.code === 'NumpadEnter') {
-        event.preventDefault()
+      if (event.code !== 'Enter' && event.code !== 'NumpadEnter') {
+        return
+      }
+
+      event.preventDefault()
+
+      if (showNextButton || showWorldNextButton) {
         goToNextLevel()
+        return
+      }
+
+      if (showPlayAgainButton) {
+        goToLevel(0)
       }
     }
 
@@ -189,7 +409,7 @@ function App() {
     return () => {
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [showNextButton, goToNextLevel])
+  }, [showNextButton, showWorldNextButton, showPlayAgainButton, goToNextLevel, goToLevel])
 
   return (
       <div className="game-shell">
@@ -202,19 +422,44 @@ function App() {
 
               <div className="progress-map">
                 <div className="world-map" aria-label={`World ${currentWorld}`}>
-                  {WORLD_META.map((entry) => (
-                      <div
-                          key={entry.world}
-                          className={[
-                            'world-badge',
-                            entry.world < currentWorld ? 'done' : '',
-                            entry.world === currentWorld ? 'current' : '',
-                          ].join(' ')}
-                      >
-                        <span>{entry.icon}</span>
-                        <span>{entry.title}</span>
-                      </div>
-                  ))}
+                  {WORLD_META.map((entry) => {
+                    const isPortalPhase =
+                        worldCompleteFx.phase === 'portal' || worldCompleteFx.phase === 'ready'
+                    const isTravelPhase = worldCompleteFx.phase === 'travel'
+                    const isDone =
+                        entry.world < currentWorld ||
+                        (entry.world === currentWorld && isWorldBoundary && isPortalPhase)
+                    const isCurrent = entry.world === currentWorld && !isDone
+                    const isCharge = entry.world === currentWorld && isTravelPhase
+                    const isLockIn =
+                        entry.world === currentWorld && isWorldBoundary && isPortalPhase
+                    const isUnlockPulse =
+                        !gameFinished &&
+                        entry.world === nextWorld &&
+                        (worldCompleteFx.phase === 'portal' || worldCompleteFx.phase === 'ready')
+
+                    return (
+                        <div
+                            key={entry.world}
+                            ref={(node) => {
+                              if (node) {
+                                worldBadgeRefs.current[entry.world] = node
+                              }
+                            }}
+                            className={[
+                              'world-badge',
+                              isDone ? 'done' : '',
+                              isCurrent ? 'current' : '',
+                              isCharge ? 'charge' : '',
+                              isLockIn ? 'lock-in' : '',
+                              isUnlockPulse ? 'unlock-pulse' : '',
+                            ].join(' ')}
+                        >
+                          <span>{entry.icon}</span>
+                          <span>{entry.title}</span>
+                        </div>
+                    )
+                  })}
                 </div>
 
                 <div
@@ -223,8 +468,21 @@ function App() {
                 >
                   <div className="level-trail">
                     {currentWorldLevels.map((entry, index) => {
-                      const isDone = index < currentLevelInWorld - 1
-                      const isCurrent = index === currentLevelInWorld - 1
+                      const isFinalNode = index === currentLevelInWorld - 1
+                      const lockInNode =
+                          isWorldBoundary &&
+                          isFinalNode &&
+                          (worldCompleteFx.phase === 'portal' || worldCompleteFx.phase === 'ready')
+                      const celebrateWorldNode =
+                          isWorldBoundary &&
+                          isFinalNode &&
+                          (worldCompleteFx.phase === 'burst' || worldCompleteFx.phase === 'travel')
+                      const celebrateLevelNode =
+                          isStandardLevelComplete &&
+                          isFinalNode &&
+                          levelCompleteFx.active
+                      const isDone = index < currentLevelInWorld - 1 || lockInNode
+                      const isCurrent = isFinalNode && !isDone
 
                       return (
                           <React.Fragment key={entry.id}>
@@ -233,15 +491,23 @@ function App() {
                                     className={[
                                       'trail-segment',
                                       index < currentLevelInWorld ? 'done' : '',
+                                      celebrateLevelNode ? 'level-trail-pop' : '',
                                     ].join(' ')}
                                 />
                             ) : null}
 
                             <span
+                                ref={(node) => {
+                                  if (node) {
+                                    levelNodeRefs.current[entry.id] = node
+                                  }
+                                }}
                                 className={[
                                   'level-node',
                                   isDone ? 'done' : '',
                                   isCurrent ? 'current' : '',
+                                  celebrateWorldNode ? 'celebrate' : '',
+                                  celebrateLevelNode ? 'level-clear-pulse' : '',
                                 ].join(' ')}
                             >
                           {isDone ? '★' : ''}
@@ -269,7 +535,16 @@ function App() {
               <div className="message-line">{message}</div>
             </div>
 
-            <div className="target-area">
+            <div
+                className={[
+                  'target-area',
+                  levelCompleteFx.active ? 'level-complete-mode' : '',
+                  worldCompleteFx.active ? 'world-complete-mode' : '',
+                  `level-phase-${levelCompleteFx.phase}`,
+                  `world-phase-${worldCompleteFx.phase}`,
+                ].join(' ')}
+                ref={targetAreaRef}
+            >
               <div
                   ref={targetVisualRef}
                   className={[
@@ -380,9 +655,45 @@ function App() {
                     </div>
                 )}
               </div>
+
+              {showLevelBanner ? (
+                  <div className="level-complete-banner" aria-hidden="true">
+                    <div className="level-complete-badge">🏅</div>
+                    <div className="level-complete-copy">
+                      <div className="level-complete-title">Level Clear!</div>
+                      <div className="level-complete-subtitle">Great job. Ready for the next one?</div>
+                    </div>
+                  </div>
+              ) : null}
+
+              {showPortalCard ? (
+                  <div className="world-portal-card" aria-hidden="true">
+                    <div className="world-complete-ring" />
+                    <div className="world-complete-key">🗝️</div>
+
+                    <div className="world-complete-title">
+                      {gameFinished ? 'Key Quest Complete!' : 'World Complete!'}
+                    </div>
+
+                    <div className="world-complete-subtitle">
+                      {gameFinished
+                          ? 'You finished every world'
+                          : `You unlocked ${unlockedWorldMeta?.title}`}
+                    </div>
+
+                    <div className="world-complete-next-badge">
+                  <span className="world-complete-next-icon">
+                    {gameFinished ? '🏆' : unlockedWorldMeta?.icon}
+                  </span>
+                      <span>
+                    {gameFinished ? 'All worlds cleared' : unlockedWorldMeta?.title}
+                  </span>
+                    </div>
+                  </div>
+              ) : null}
             </div>
 
-            <div className="queue-row">
+            <div className={['queue-row', queueDimmed ? 'complete-dim' : ''].join(' ')}>
               {ui.queue.map((item) => (
                   <div
                       key={item.id}
@@ -402,13 +713,19 @@ function App() {
             <div className="action-row">
               {showNextButton ? (
                   <button className="soft-button" onClick={goToNextLevel}>
-                    Next now
-                    {nextCountdown !== null ? ` (${nextCountdown})` : ''}
+                    Next now{nextCountdown !== null ? ` (${nextCountdown})` : ''}
+                  </button>
+              ) : null}
+
+              {showWorldNextButton ? (
+                  <button className="big-button world-enter-button" onClick={goToNextLevel}>
+                    Enter {unlockedWorldMeta?.title}
+                    {worldCountdown !== null ? ` (${worldCountdown})` : ''}
                   </button>
               ) : null}
 
               {showPlayAgainButton ? (
-                  <button className="big-button" onClick={() => goToLevel(0)}>
+                  <button className="big-button world-enter-button" onClick={() => goToLevel(0)}>
                     Play again
                   </button>
               ) : null}
@@ -428,6 +745,46 @@ function App() {
                   ⭐
                 </div>
             ) : null}
+
+            {levelTravelStars.map((star) => (
+                <div
+                    key={star.id}
+                    className="level-travel-star"
+                    style={{
+                      '--start-x': `${star.startX}px`,
+                      '--start-y': `${star.startY}px`,
+                      '--launch-x': `${star.launchX}px`,
+                      '--launch-y': `${star.launchY}px`,
+                      '--fly-x': `${star.deltaX}px`,
+                      '--fly-y': `${star.deltaY}px`,
+                      '--star-size': `${star.size}rem`,
+                      animationDelay: `${star.delay}ms`,
+                    }}
+                    aria-hidden="true"
+                >
+                  {star.glyph}
+                </div>
+            ))}
+
+            {worldTravelStars.map((star) => (
+                <div
+                    key={star.id}
+                    className="world-travel-star"
+                    style={{
+                      '--start-x': `${star.startX}px`,
+                      '--start-y': `${star.startY}px`,
+                      '--launch-x': `${star.launchX}px`,
+                      '--launch-y': `${star.launchY}px`,
+                      '--fly-x': `${star.deltaX}px`,
+                      '--fly-y': `${star.deltaY}px`,
+                      '--star-size': `${star.size}rem`,
+                      animationDelay: `${star.delay}ms`,
+                    }}
+                    aria-hidden="true"
+                >
+                  {star.glyph}
+                </div>
+            ))}
           </main>
 
           <section className="keyboard-stage">

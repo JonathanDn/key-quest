@@ -62,6 +62,25 @@
             0 0 24px rgba(255, 255, 255, 0.12);
 }
 
+.world-badge.charge {
+    animation: world-badge-charge 0.72s ease;
+}
+
+.world-badge.lock-in {
+    opacity: 1;
+    transform: scale(1.04);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.14));
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow:
+            0 0 0 2px rgba(255, 255, 255, 0.2),
+            0 0 28px rgba(255, 255, 255, 0.24);
+}
+
+.world-badge.unlock-pulse {
+    opacity: 1;
+    animation: world-badge-unlock 0.72s ease;
+}
+
 .level-progress {
     width: min(520px, 100%);
     display: grid;
@@ -82,13 +101,17 @@
     border-radius: var(--radius-pill);
     background: rgba(255, 255, 255, 0.14);
     border: 2px solid rgba(255, 255, 255, 0.1);
-    transition: background var(--transition-ui), box-shadow var(--transition-ui);
+    transition: background var(--transition-ui), box-shadow var(--transition-ui), transform var(--transition-ui);
 }
 
 .trail-segment.done {
     background: linear-gradient(180deg, var(--color-button-start-top), var(--color-button-start-bottom));
     border-color: transparent;
     box-shadow: 0 0 14px rgba(255, 94, 124, 0.18);
+}
+
+.trail-segment.level-trail-pop {
+    animation: level-trail-pop 0.7s ease;
 }
 
 .level-node {
@@ -122,6 +145,14 @@
     border-color: transparent;
     box-shadow: 0 0 20px rgba(255, 255, 255, 0.45);
     transform: scale(1.05);
+}
+
+.level-node.celebrate {
+    animation: level-node-celebrate 0.72s ease;
+}
+
+.level-node.level-clear-pulse {
+    animation: level-clear-pulse 0.78s ease;
 }
 
 .guidance-row {
@@ -167,6 +198,11 @@
     min-height: 0;
     padding: 18px 0 28px;
     overflow: visible;
+}
+
+.target-area.level-complete-mode,
+.target-area.world-complete-mode {
+    isolation: isolate;
 }
 
 .target-visual {
@@ -260,19 +296,40 @@
     animation: sparkle-6 0.34s ease;
 }
 
-.flying-reward-star {
-    position: fixed;
-    left: var(--start-x);
-    top: var(--start-y);
-    transform: translate(-50%, -50%);
-    font-size: 1.5rem;
-    pointer-events: none;
-    z-index: 30;
-    animation: reward-star-flight 0.5s ease forwards;
+.level-phase-burst .big-target,
+.level-phase-burst .word-power-stage {
+    animation: level-final-hit 0.42s ease;
 }
 
-.star-counter-pop {
-    animation: star-counter-pop 0.28s ease;
+.level-phase-trail .big-target,
+.level-phase-ready .big-target,
+.level-phase-trail .word-power-stage,
+.level-phase-ready .word-power-stage {
+    filter: brightness(1.06);
+    transition: filter 0.3s ease;
+}
+
+.world-phase-burst .big-target,
+.world-phase-burst .word-power-stage {
+    animation: world-final-hit 0.28s ease;
+}
+
+.world-phase-travel .big-target,
+.world-phase-travel .word-power-stage {
+    animation: world-target-settle 0.5s ease forwards;
+}
+
+.world-phase-portal .big-target,
+.world-phase-ready .big-target,
+.world-phase-portal .word-power-stage,
+.world-phase-ready .word-power-stage {
+    opacity: 0.14;
+    transform: scale(0.92);
+    filter: blur(2px);
+    transition:
+            opacity 0.35s ease,
+            transform 0.35s ease,
+            filter 0.35s ease;
 }
 
 .big-target {
@@ -544,6 +601,16 @@
     gap: var(--space-gap-sm);
     flex-wrap: wrap;
     min-height: 0;
+    transition:
+            opacity 0.35s ease,
+            transform 0.35s ease,
+            filter 0.35s ease;
+}
+
+.queue-row.complete-dim {
+    opacity: 0.16;
+    transform: scale(0.97);
+    filter: blur(1px);
 }
 
 .queue-bubble {
@@ -620,6 +687,167 @@
     background: var(--color-glass-stronger);
 }
 
+.world-enter-button {
+    animation: world-cta-land 0.35s ease;
+}
+
+.star-counter-pop {
+    animation: star-counter-pop 0.28s ease;
+}
+
+.flying-reward-star,
+.level-travel-star,
+.world-travel-star {
+    position: fixed;
+    left: var(--start-x);
+    top: var(--start-y);
+    transform: translate(-50%, -50%);
+    line-height: 1;
+    pointer-events: none;
+    z-index: 40;
+}
+
+.flying-reward-star {
+    font-size: 1.5rem;
+    animation: reward-star-flight 0.5s ease forwards;
+}
+
+.level-travel-star,
+.world-travel-star {
+    font-size: var(--star-size);
+    filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.35));
+}
+
+.level-travel-star {
+    animation: level-star-travel 0.72s cubic-bezier(0.2, 0.78, 0.2, 1) forwards;
+}
+
+.world-travel-star {
+    animation: world-star-travel 0.84s cubic-bezier(0.2, 0.78, 0.2, 1) forwards;
+}
+
+.level-complete-banner {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 6;
+    min-height: 60px;
+    padding: 12px 18px;
+    border-radius: 26px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(18, 8, 36, 0.92);
+    border: 2px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.24);
+    animation: level-banner-land 0.42s ease;
+    pointer-events: none;
+}
+
+.level-complete-badge {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 1.35rem;
+    background: rgba(255, 255, 255, 0.14);
+    box-shadow: 0 0 18px rgba(255, 255, 255, 0.12);
+}
+
+.level-complete-copy {
+    display: grid;
+    gap: 2px;
+    text-align: left;
+}
+
+.level-complete-title {
+    font-size: clamp(1.1rem, 2vw, 1.35rem);
+    font-weight: 900;
+    line-height: 1.05;
+}
+
+.level-complete-subtitle {
+    font-size: 0.92rem;
+    font-weight: 700;
+    opacity: 0.88;
+}
+
+.world-portal-card {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 14px;
+    text-align: center;
+    z-index: 6;
+    pointer-events: none;
+}
+
+.world-complete-ring {
+    position: absolute;
+    width: min(340px, 72vw);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 5px solid rgba(255, 255, 255, 0.9);
+    box-shadow:
+            0 0 40px rgba(255, 255, 255, 0.34),
+            inset 0 0 32px rgba(255, 255, 255, 0.12);
+    animation: world-portal-open 0.62s ease forwards;
+}
+
+.world-complete-key {
+    position: relative;
+    z-index: 1;
+    font-size: clamp(4rem, 10vw, 7rem);
+    line-height: 1;
+    filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.18));
+    animation: world-key-turn 0.72s ease;
+}
+
+.world-complete-title {
+    position: relative;
+    z-index: 1;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 900;
+    line-height: 1.05;
+}
+
+.world-complete-subtitle {
+    position: relative;
+    z-index: 1;
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    font-weight: 800;
+    opacity: 0.96;
+}
+
+.world-complete-next-badge {
+    position: relative;
+    z-index: 1;
+    min-height: 44px;
+    padding: 10px 16px;
+    border-radius: var(--radius-pill);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    font-weight: 900;
+    background: rgba(18, 8, 36, 0.68);
+    border: 2px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+}
+
+.world-complete-next-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
 @keyframes target-success-pop {
     0% {
         transform: scale(0.94);
@@ -629,6 +857,21 @@
     }
     100% {
         transform: scale(1);
+    }
+}
+
+@keyframes level-final-hit {
+    0% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+    45% {
+        transform: scale(1.08);
+        filter: brightness(1.18);
+    }
+    100% {
+        transform: scale(1);
+        filter: brightness(1);
     }
 }
 
@@ -763,6 +1006,194 @@
     }
 }
 
+@keyframes level-banner-land {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 12px) scale(0.92);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+    }
+}
+
+@keyframes level-trail-pop {
+    0% {
+        transform: scaleX(1);
+        box-shadow: 0 0 14px rgba(255, 94, 124, 0.18);
+    }
+    50% {
+        transform: scaleX(1.08);
+        box-shadow: 0 0 24px rgba(255, 255, 255, 0.34);
+    }
+    100% {
+        transform: scaleX(1);
+        box-shadow: 0 0 14px rgba(255, 94, 124, 0.18);
+    }
+}
+
+@keyframes level-clear-pulse {
+    0% {
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.45);
+    }
+    50% {
+        transform: scale(1.22);
+        box-shadow: 0 0 34px rgba(255, 255, 255, 0.62);
+    }
+    100% {
+        transform: scale(1.08);
+        box-shadow: 0 0 24px rgba(255, 255, 255, 0.52);
+    }
+}
+
+@keyframes level-star-travel {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.42);
+    }
+    16% {
+        opacity: 1;
+        transform: translate(calc(-50% + var(--launch-x)), calc(-50% + var(--launch-y))) scale(1.04);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--fly-x)), calc(-50% + var(--fly-y))) scale(0.56);
+    }
+}
+
+@keyframes world-final-hit {
+    0% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+    40% {
+        transform: scale(1.06);
+        filter: brightness(1.24);
+    }
+    100% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+}
+
+@keyframes world-target-settle {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+        filter: brightness(1);
+    }
+    100% {
+        opacity: 0.22;
+        transform: scale(0.94);
+        filter: brightness(0.9);
+    }
+}
+
+@keyframes world-badge-charge {
+    0% {
+        transform: scale(1.02);
+        box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    }
+    50% {
+        transform: scale(1.14);
+        box-shadow:
+                0 0 0 2px rgba(255, 255, 255, 0.18),
+                0 0 34px rgba(255, 255, 255, 0.28);
+    }
+    100% {
+        transform: scale(1.02);
+        box-shadow:
+                0 0 0 2px rgba(255, 255, 255, 0.12),
+                0 0 24px rgba(255, 255, 255, 0.12);
+    }
+}
+
+@keyframes world-badge-unlock {
+    0% {
+        transform: scale(0.96);
+        opacity: 0.56;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+        box-shadow:
+                0 0 0 2px rgba(255, 255, 255, 0.18),
+                0 0 30px rgba(255, 255, 255, 0.24);
+    }
+    100% {
+        transform: scale(1.02);
+        opacity: 1;
+    }
+}
+
+@keyframes level-node-celebrate {
+    0% {
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.45);
+    }
+    50% {
+        transform: scale(1.18);
+        box-shadow: 0 0 30px rgba(255, 255, 255, 0.55);
+    }
+    100% {
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.45);
+    }
+}
+
+@keyframes world-key-turn {
+    0% {
+        opacity: 0;
+        transform: scale(0.72) rotate(-24deg);
+    }
+    60% {
+        opacity: 1;
+        transform: scale(1.08) rotate(10deg);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+@keyframes world-portal-open {
+    0% {
+        opacity: 0;
+        transform: scale(0.52);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes world-star-travel {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.42);
+    }
+    14% {
+        opacity: 1;
+        transform: translate(calc(-50% + var(--launch-x)), calc(-50% + var(--launch-y))) scale(1.05);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--fly-x)), calc(-50% + var(--fly-y))) scale(0.58);
+    }
+}
+
+@keyframes world-cta-land {
+    0% {
+        opacity: 0;
+        transform: translateY(12px) scale(0.92);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 @keyframes zone-burst {
     0% {
         transform: scale(0.98);
@@ -869,6 +1300,18 @@
         width: 126px;
         font-size: 0.88rem;
     }
+
+    .world-complete-ring {
+        width: min(300px, 80vw);
+    }
+
+    .world-complete-key {
+        font-size: clamp(3.4rem, 11vw, 5.4rem);
+    }
+
+    .level-complete-banner {
+        width: min(92vw, 420px);
+    }
 }
 
 @media (max-width: 560px) {
@@ -930,5 +1373,32 @@
 
     .word-chip {
         font-size: 1rem;
+    }
+
+    .world-complete-title {
+        font-size: 1.55rem;
+    }
+
+    .world-complete-subtitle {
+        font-size: 0.96rem;
+    }
+
+    .world-complete-next-badge {
+        font-size: 0.92rem;
+        padding: 9px 14px;
+    }
+
+    .level-complete-banner {
+        width: min(94vw, 320px);
+        padding: 10px 14px;
+        gap: 10px;
+    }
+
+    .level-complete-title {
+        font-size: 1rem;
+    }
+
+    .level-complete-subtitle {
+        font-size: 0.82rem;
     }
 }
