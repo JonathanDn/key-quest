@@ -31,14 +31,23 @@ function App() {
     complete,
     targetColor,
     ui,
+    successFx,
     goToLevel,
     goToNextLevel,
   } = useTypingGame()
 
   const gameAreaRef = useRef(null)
+  const targetVisualRef = useRef(null)
+  const starCounterRef = useRef(null)
+
   const [nextCountdown, setNextCountdown] = useState(null)
   const [clipboardBurst, setClipboardBurst] = useState(false)
   const [targetBurst, setTargetBurst] = useState(false)
+  const [showSuccessBurst, setShowSuccessBurst] = useState(false)
+  const [showPraiseChip, setShowPraiseChip] = useState(false)
+  const [flyingStar, setFlyingStar] = useState(null)
+  const [starPulse, setStarPulse] = useState(false)
+
   const previousClipboardRef = useRef(ui.wordPower.clipboardText)
   const previousTargetRef = useRef(ui.wordPower.targetText)
 
@@ -89,6 +98,48 @@ function App() {
       window.clearTimeout(targetTimeout)
     }
   }, [ui.showWordPowerBoard, ui.wordPower.clipboardText, ui.wordPower.targetText])
+
+  useEffect(() => {
+    if (!successFx.id) {
+      return
+    }
+
+    setShowSuccessBurst(true)
+    setShowPraiseChip(true)
+    setStarPulse(true)
+
+    const targetRect = targetVisualRef.current?.getBoundingClientRect()
+    const starRect = starCounterRef.current?.getBoundingClientRect()
+
+    if (targetRect && starRect) {
+      const startX = targetRect.left + targetRect.width / 2
+      const startY = targetRect.top + targetRect.height / 2
+      const endX = starRect.left + starRect.width / 2
+      const endY = starRect.top + starRect.height / 2
+
+      setFlyingStar({
+        id: successFx.id,
+        startX,
+        startY,
+        deltaX: endX - startX,
+        deltaY: endY - startY,
+      })
+    } else {
+      setFlyingStar(null)
+    }
+
+    const burstTimeout = window.setTimeout(() => setShowSuccessBurst(false), 320)
+    const praiseTimeout = window.setTimeout(() => setShowPraiseChip(false), 520)
+    const starTimeout = window.setTimeout(() => setFlyingStar(null), 520)
+    const pulseTimeout = window.setTimeout(() => setStarPulse(false), 300)
+
+    return () => {
+      window.clearTimeout(burstTimeout)
+      window.clearTimeout(praiseTimeout)
+      window.clearTimeout(starTimeout)
+      window.clearTimeout(pulseTimeout)
+    }
+  }, [successFx.id])
 
   useEffect(() => {
     if (!complete || !hasNextLevel) {
@@ -202,7 +253,16 @@ function App() {
                 </div>
               </div>
 
-              <div className="mini-pill top-bar-pill">⭐ {stars}</div>
+              <div
+                  ref={starCounterRef}
+                  className={[
+                    'mini-pill',
+                    'top-bar-pill',
+                    starPulse ? 'star-counter-pop' : '',
+                  ].join(' ')}
+              >
+                ⭐ {stars}
+              </div>
             </div>
 
             <div className="guidance-row">
@@ -210,92 +270,116 @@ function App() {
             </div>
 
             <div className="target-area">
-              {ui.showWordPowerBoard ? (
-                  <div className="word-power-stage" style={{ '--target-color': targetColor }}>
-                    <div className="word-power-header">
-                      <div className="word-power-task-pill">{ui.wordPower.taskLabel}</div>
-                      <div className="word-power-action-badge">
-                        {ui.wordPower.actionLabel}
+              <div
+                  ref={targetVisualRef}
+                  className={[
+                    'target-visual',
+                    showSuccessBurst ? 'success-burst' : '',
+                  ].join(' ')}
+                  style={{ '--target-color': successFx.color || targetColor }}
+              >
+                {showPraiseChip && successFx.praise ? (
+                    <div className="success-praise-chip">{successFx.praise}</div>
+                ) : null}
+
+                <div className="success-sparkle-ring" aria-hidden="true" />
+
+                <div className="success-sparkles" aria-hidden="true">
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                </div>
+
+                {ui.showWordPowerBoard ? (
+                    <div className="word-power-stage" style={{ '--target-color': targetColor }}>
+                      <div className="word-power-header">
+                        <div className="word-power-task-pill">{ui.wordPower.taskLabel}</div>
+                        <div className="word-power-action-badge">
+                          {ui.wordPower.actionLabel}
+                        </div>
+                      </div>
+
+                      <div className="word-power-lab">
+                        <div className={ui.wordPower.highlightSource ? 'word-zone source active' : 'word-zone source'}>
+                          <div className="word-zone-label">Copy from</div>
+                          <div className="word-zone-slot">
+                            {renderWordChips(ui.wordPower.sourceText)}
+                          </div>
+                        </div>
+
+                        <div className="word-flow-arrow" aria-hidden="true">
+                          →
+                        </div>
+
+                        <div
+                            className={[
+                              'word-zone',
+                              'clipboard',
+                              ui.wordPower.highlightClipboard ? 'active' : '',
+                              clipboardBurst ? 'burst' : '',
+                            ].join(' ')}
+                        >
+                          <div className="word-zone-label">Clipboard</div>
+                          <div className="word-zone-slot clipboard-slot">
+                            {renderWordChips(ui.wordPower.clipboardText)}
+                          </div>
+                        </div>
+
+                        <div className="word-flow-arrow" aria-hidden="true">
+                          →
+                        </div>
+
+                        <div
+                            className={[
+                              'word-zone',
+                              'target',
+                              ui.wordPower.highlightTarget ? 'active' : '',
+                              targetBurst ? 'burst' : '',
+                            ].join(' ')}
+                        >
+                          <div className="word-zone-label">Paste here</div>
+                          <div className="word-zone-slot target-slot">
+                            {renderWordChips(ui.wordPower.targetText)}
+                          </div>
+                        </div>
                       </div>
                     </div>
-
-                    <div className="word-power-lab">
-                      <div className={ui.wordPower.highlightSource ? 'word-zone source active' : 'word-zone source'}>
-                        <div className="word-zone-label">Copy from</div>
-                        <div className="word-zone-slot">
-                          {renderWordChips(ui.wordPower.sourceText)}
-                        </div>
-                      </div>
-
-                      <div className="word-flow-arrow" aria-hidden="true">
-                        →
-                      </div>
-
-                      <div
-                          className={[
-                            'word-zone',
-                            'clipboard',
-                            ui.wordPower.highlightClipboard ? 'active' : '',
-                            clipboardBurst ? 'burst' : '',
-                          ].join(' ')}
-                      >
-                        <div className="word-zone-label">Clipboard</div>
-                        <div className="word-zone-slot clipboard-slot">
-                          {renderWordChips(ui.wordPower.clipboardText)}
-                        </div>
-                      </div>
-
-                      <div className="word-flow-arrow" aria-hidden="true">
-                        →
-                      </div>
-
-                      <div
-                          className={[
-                            'word-zone',
-                            'target',
-                            ui.wordPower.highlightTarget ? 'active' : '',
-                            targetBurst ? 'burst' : '',
-                          ].join(' ')}
-                      >
-                        <div className="word-zone-label">Paste here</div>
-                        <div className="word-zone-slot target-slot">
-                          {renderWordChips(ui.wordPower.targetText)}
-                        </div>
-                      </div>
+                ) : (
+                    <div
+                        className={[
+                          'big-target',
+                          ui.target.isWide ? 'wide' : '',
+                          ui.target.mode === 'combo' ? 'combo' : '',
+                          ui.target.mode === 'textStep' ? 'text-step' : '',
+                        ].join(' ')}
+                        style={{ '--target-color': targetColor }}
+                    >
+                      {ui.target.mode === 'combo' ? (
+                          <div className="combo-target">
+                            {ui.target.comboChips.map((chip, index) => (
+                                <React.Fragment key={chip.code}>
+                                  {index > 0 ? <span className="combo-plus">+</span> : null}
+                                  <span className={chip.held ? 'combo-chip held' : 'combo-chip'}>
+                            {chip.label}
+                          </span>
+                                </React.Fragment>
+                            ))}
+                          </div>
+                      ) : ui.target.mode === 'textStep' ? (
+                          <div className="word-target">
+                            <span className="word-done">{ui.target.stepDoneText}</span>
+                            <span className="word-current">{ui.target.stepCurrentChar}</span>
+                            <span className="word-upcoming">{ui.target.stepUpcomingText}</span>
+                          </div>
+                      ) : (
+                          ui.target.label
+                      )}
                     </div>
-                  </div>
-              ) : (
-                  <div
-                      className={[
-                        'big-target',
-                        ui.target.isWide ? 'wide' : '',
-                        ui.target.mode === 'combo' ? 'combo' : '',
-                        ui.target.mode === 'textStep' ? 'text-step' : '',
-                      ].join(' ')}
-                      style={{ '--target-color': targetColor }}
-                  >
-                    {ui.target.mode === 'combo' ? (
-                        <div className="combo-target">
-                          {ui.target.comboChips.map((chip, index) => (
-                              <React.Fragment key={chip.code}>
-                                {index > 0 ? <span className="combo-plus">+</span> : null}
-                                <span className={chip.held ? 'combo-chip held' : 'combo-chip'}>
-                          {chip.label}
-                        </span>
-                              </React.Fragment>
-                          ))}
-                        </div>
-                    ) : ui.target.mode === 'textStep' ? (
-                        <div className="word-target">
-                          <span className="word-done">{ui.target.stepDoneText}</span>
-                          <span className="word-current">{ui.target.stepCurrentChar}</span>
-                          <span className="word-upcoming">{ui.target.stepUpcomingText}</span>
-                        </div>
-                    ) : (
-                        ui.target.label
-                    )}
-                  </div>
-              )}
+                )}
+              </div>
             </div>
 
             <div className="queue-row">
@@ -319,6 +403,7 @@ function App() {
               {showNextButton ? (
                   <button className="soft-button" onClick={goToNextLevel}>
                     Next now
+                    {nextCountdown !== null ? ` (${nextCountdown})` : ''}
                   </button>
               ) : null}
 
@@ -328,6 +413,21 @@ function App() {
                   </button>
               ) : null}
             </div>
+
+            {flyingStar ? (
+                <div
+                    className="flying-reward-star"
+                    style={{
+                      '--start-x': `${flyingStar.startX}px`,
+                      '--start-y': `${flyingStar.startY}px`,
+                      '--fly-x': `${flyingStar.deltaX}px`,
+                      '--fly-y': `${flyingStar.deltaY}px`,
+                    }}
+                    aria-hidden="true"
+                >
+                  ⭐
+                </div>
+            ) : null}
           </main>
 
           <section className="keyboard-stage">

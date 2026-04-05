@@ -39,6 +39,11 @@ export function useTypingGame() {
     const [playing, setPlaying] = useState(true)
     const [complete, setComplete] = useState(false)
     const [stageState, setStageState] = useState(getStageState(initialLevel, initialRound[0]))
+    const [successFx, setSuccessFx] = useState({
+        id: 0,
+        praise: '',
+        color: '#ffffff',
+    })
 
     const pressedKeysRef = useRef(new Set())
 
@@ -118,7 +123,17 @@ export function useTypingGame() {
             }
 
             if (result.type === 'success') {
-                advanceRound(result.successMessage ?? randomPick(HAPPY_MESSAGES))
+                const praise = randomPick(HAPPY_MESSAGES)
+                const successMessage = result.successMessage ?? praise
+                const color = engine.getTargetColor?.(currentTarget) ?? '#ffffff'
+
+                setSuccessFx((value) => ({
+                    id: value.id + 1,
+                    praise,
+                    color,
+                }))
+
+                advanceRound(successMessage)
                 return
             }
 
@@ -171,6 +186,11 @@ export function useTypingGame() {
         setPlaying(true)
         setStageState(getStageState(nextLevel, nextRound[0]))
         setMessage(getStartMessage(nextLevel, nextRound[0]))
+        setSuccessFx({
+            id: 0,
+            praise: '',
+            color: '#ffffff',
+        })
     }, [])
 
     const goToNextLevel = useCallback(() => {
@@ -191,6 +211,7 @@ export function useTypingGame() {
         complete,
         targetColor,
         ui,
+        successFx,
         goToLevel,
         goToNextLevel,
     }

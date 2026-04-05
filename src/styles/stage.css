@@ -169,6 +169,112 @@
     overflow: visible;
 }
 
+.target-visual {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    overflow: visible;
+}
+
+.target-visual.success-burst .big-target,
+.target-visual.success-burst .word-power-stage {
+    animation: target-success-pop 0.3s ease;
+}
+
+.success-praise-chip {
+    position: absolute;
+    top: -16px;
+    left: 50%;
+    transform: translate(-50%, 0);
+    min-height: 38px;
+    padding: 8px 14px;
+    border-radius: var(--radius-pill);
+    background: rgba(18, 8, 36, 0.96);
+    color: #ffffff;
+    border: 2px solid rgba(255, 255, 255, 0.16);
+    font-size: 0.98rem;
+    font-weight: 900;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
+    pointer-events: none;
+    z-index: 5;
+    animation: praise-chip-float 0.52s ease;
+}
+
+.success-sparkle-ring {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    width: 120px;
+    height: 120px;
+    transform: translate(-50%, -50%) scale(0.7);
+    border-radius: 50%;
+    border: 4px solid var(--target-color);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.target-visual.success-burst .success-sparkle-ring {
+    animation: sparkle-ring-burst 0.32s ease;
+}
+
+.success-sparkles {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.success-sparkles span {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    margin: -7px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 0 16px var(--target-color);
+    opacity: 0;
+}
+
+.target-visual.success-burst .success-sparkles span:nth-child(1) {
+    animation: sparkle-1 0.34s ease;
+}
+
+.target-visual.success-burst .success-sparkles span:nth-child(2) {
+    animation: sparkle-2 0.34s ease;
+}
+
+.target-visual.success-burst .success-sparkles span:nth-child(3) {
+    animation: sparkle-3 0.34s ease;
+}
+
+.target-visual.success-burst .success-sparkles span:nth-child(4) {
+    animation: sparkle-4 0.34s ease;
+}
+
+.target-visual.success-burst .success-sparkles span:nth-child(5) {
+    animation: sparkle-5 0.34s ease;
+}
+
+.target-visual.success-burst .success-sparkles span:nth-child(6) {
+    animation: sparkle-6 0.34s ease;
+}
+
+.flying-reward-star {
+    position: fixed;
+    left: var(--start-x);
+    top: var(--start-y);
+    transform: translate(-50%, -50%);
+    font-size: 1.5rem;
+    pointer-events: none;
+    z-index: 30;
+    animation: reward-star-flight 0.5s ease forwards;
+}
+
+.star-counter-pop {
+    animation: star-counter-pop 0.28s ease;
+}
+
 .big-target {
     width: var(--target-size);
     max-width: 100%;
@@ -475,6 +581,7 @@
     transform: scale(1.08);
     border-color: var(--bubble-color);
     box-shadow: 0 0 24px var(--bubble-color);
+    animation: queue-bubble-snap 0.28s ease;
 }
 
 .big-button,
@@ -511,6 +618,149 @@
     font-size: 1.1rem;
     font-weight: 800;
     background: var(--color-glass-stronger);
+}
+
+@keyframes target-success-pop {
+    0% {
+        transform: scale(0.94);
+    }
+    55% {
+        transform: scale(1.04);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes praise-chip-float {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 10px) scale(0.9);
+    }
+    25% {
+        opacity: 1;
+        transform: translate(-50%, -4px) scale(1.04);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -18px) scale(1);
+    }
+}
+
+@keyframes sparkle-ring-burst {
+    0% {
+        opacity: 0.9;
+        transform: translate(-50%, -50%) scale(0.7);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.45);
+    }
+}
+
+@keyframes reward-star-flight {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.7);
+    }
+    25% {
+        opacity: 1;
+        transform: translate(calc(-50% + (var(--fly-x) * 0.2)), calc(-50% + (var(--fly-y) * 0.2))) scale(1.12);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--fly-x)), calc(-50% + var(--fly-y))) scale(0.66);
+    }
+}
+
+@keyframes star-counter-pop {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.12);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes queue-bubble-snap {
+    0% {
+        transform: scale(0.92);
+    }
+    60% {
+        transform: scale(1.12);
+    }
+    100% {
+        transform: scale(1.08);
+    }
+}
+
+@keyframes sparkle-1 {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(0.5);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(0, -44px) scale(1);
+    }
+}
+
+@keyframes sparkle-2 {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(0.5);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(34px, -24px) scale(1);
+    }
+}
+
+@keyframes sparkle-3 {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(0.5);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(42px, 10px) scale(1);
+    }
+}
+
+@keyframes sparkle-4 {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(0.5);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(0, 40px) scale(1);
+    }
+}
+
+@keyframes sparkle-5 {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(0.5);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-34px, 22px) scale(1);
+    }
+}
+
+@keyframes sparkle-6 {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(0.5);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-40px, -20px) scale(1);
+    }
 }
 
 @keyframes zone-burst {
