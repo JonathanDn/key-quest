@@ -14,7 +14,8 @@ function App() {
     level,
     levelIndex,
     pressedCode,
-    stars,
+    elapsedTimeMs,
+    bestTimeMs,
     message,
     playing,
     complete,
@@ -83,7 +84,8 @@ function App() {
           <main className="stage-card" ref={gameAreaRef} tabIndex={-1}>
             <StageHeader
                 level={level}
-                stars={stars}
+                elapsedTimeMs={elapsedTimeMs}
+                bestTimeMs={bestTimeMs}
                 currentWorld={progression.currentWorld}
                 currentWorldLevels={progression.currentWorldLevels}
                 currentLevelInWorld={progression.currentLevelInWorld}

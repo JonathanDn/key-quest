@@ -61,6 +61,23 @@ export function useTypingGame() {
         }
     }, [])
 
+    useEffect(() => {
+        if (session.timerStartedAt === null || !session.playing || session.complete) {
+            return undefined
+        }
+
+        const intervalId = window.setInterval(() => {
+            dispatch({
+                type: 'TICK',
+                now: Date.now(),
+            })
+        }, 100)
+
+        return () => {
+            window.clearInterval(intervalId)
+        }
+    }, [session.timerStartedAt, session.playing, session.complete])
+
     const goToLevel = useCallback((index) => {
         dispatch({
             type: 'GO_TO_LEVEL',

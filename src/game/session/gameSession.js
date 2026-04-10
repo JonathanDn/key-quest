@@ -15,6 +15,10 @@ function randomPick(list) {
     return list[Math.floor(Math.random() * list.length)]
 }
 
+function formatElapsedTime(elapsedTimeMs) {
+    return `${(Math.max(elapsedTimeMs, 0) / 1000).toFixed(1)}s`
+}
+
 function getLevel(levelIndex) {
     return LEVELS[levelIndex]
 }
@@ -35,7 +39,19 @@ function getStartMessage(level, target) {
     return getEngine(level).getGuidance?.(target) || 'Watch the glowing key'
 }
 
-function buildLevelSession(levelIndex) {
+function getElapsedTimeMs(state, now = Date.now()) {
+    if (state.timerStartedAt === null) {
+        return state.elapsedTimeMs
+    }
+
+    if (!state.playing || state.complete) {
+        return state.elapsedTimeMs
+    }
+
+    return Math.max(state.elapsedTimeMs, now - state.timerStartedAt)
+}
+
+function buildLevelSession(levelIndex, bestTimesByLevelId = {}) {
     const level = getLevel(levelIndex)
     const engine = getEngine(level)
     const round = engine.createRound(level)
@@ -57,6 +73,9 @@ function buildLevelSession(levelIndex) {
             praise: '',
             color: '#ffffff',
         },
+        timerStartedAt: null,
+        elapsedTimeMs: 0,
+        bestTimesByLevelId,
     }
 }
 
@@ -99,17 +118,31 @@ function handleKeyDown(state, normalizedCode, praise) {
     }) ?? { type: 'none' }
 
     if (result.type === 'success') {
+        const now = Date.now()
+        const timerStartedAt = state.timerStartedAt ?? now
         const nextIndex = state.currentIndex + 1
         const nextTarget = state.round[nextIndex]
         const isComplete = nextIndex >= state.round.length && state.round.length > 0
         const targetColor = engine.getTargetColor?.(currentTarget) ?? '#ffffff'
+        const elapsedTimeMs = isComplete
+            ? Math.max(state.elapsedTimeMs, now - timerStartedAt)
+            : state.elapsedTimeMs
+
+        const previousBestTimeMs = state.bestTimesByLevelId[level.id]
+        const nextBestTimeMs =
+            isComplete && (
+                typeof previousBestTimeMs !== 'number' ||
+                elapsedTimeMs < previousBestTimeMs
+            )
+                ? elapsedTimeMs
+                : previousBestTimeMs
 
         return {
             ...nextState,
             currentIndex: nextIndex,
             stars: state.stars + 1,
             message: isComplete
-                ? 'You did it!'
+                ? `You did it in ${formatElapsedTime(elapsedTimeMs)}!`
                 : (engine.getGuidance?.(nextTarget) ?? ''),
             playing: !isComplete,
             complete: isComplete,
@@ -121,6 +154,14 @@ function handleKeyDown(state, normalizedCode, praise) {
                 praise: praise ?? randomPick(HAPPY_MESSAGES),
                 color: targetColor,
             },
+            timerStartedAt,
+            elapsedTimeMs,
+            bestTimesByLevelId: isComplete
+                ? {
+                    ...state.bestTimesByLevelId,
+                    [level.id]: nextBestTimeMs,
+                }
+                : state.bestTimesByLevelId,
         }
     }
 
@@ -153,6 +194,23 @@ function handleKeyUp(state, normalizedCode) {
     }
 }
 
+function handleTick(state, now) {
+    if (state.timerStartedAt === null || !state.playing || state.complete) {
+        return state
+    }
+
+    const elapsedTimeMs = getElapsedTimeMs(state, now)
+
+    if (elapsedTimeMs === state.elapsedTimeMs) {
+        return state
+    }
+
+    return {
+        ...state,
+        elapsedTimeMs,
+    }
+}
+
 export function normalizeKeyCode(code) {
     return code === 'Space' ? 'Space' : code
 }
@@ -169,8 +227,11 @@ export function gameSessionReducer(state, action) {
         case 'KEY_UP':
             return handleKeyUp(state, action.normalizedCode)
 
+        case 'TICK':
+            return handleTick(state, action.now)
+
         case 'GO_TO_LEVEL':
-            return buildLevelSession(action.levelIndex)
+            return buildLevelSession(action.levelIndex, state?.bestTimesByLevelId)
 
         default:
             return state
@@ -205,6 +266,8 @@ export function selectGameSession(state) {
         message: state.message,
         playing: state.playing,
         complete: state.complete,
+        elapsedTimeMs: getElapsedTimeMs(state),
+        bestTimeMs: state.bestTimesByLevelId[level.id] ?? null,
         targetColor,
         ui: buildStageView({
             level,

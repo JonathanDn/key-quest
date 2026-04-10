@@ -1,9 +1,14 @@
 import React from 'react'
 import { WORLD_META } from '../game/content/worldMeta'
 
+function formatElapsedTime(elapsedTimeMs) {
+    return `${(Math.max(elapsedTimeMs, 0) / 1000).toFixed(1)}s`
+}
+
 export function StageHeader({
                                 level,
-                                stars,
+                                elapsedTimeMs,
+                                bestTimeMs,
                                 currentWorld,
                                 currentWorldLevels,
                                 currentLevelInWorld,
@@ -113,8 +118,8 @@ export function StageHeader({
                                             celebrateLevelNode ? 'level-clear-pulse' : '',
                                         ].join(' ')}
                                     >
-                    {isDone ? '★' : ''}
-                  </span>
+                                        {isDone ? '★' : ''}
+                                    </span>
                                 </React.Fragment>
                             )
                         })}
@@ -130,7 +135,8 @@ export function StageHeader({
                     starPulse ? 'star-counter-pop' : '',
                 ].join(' ')}
             >
-                ⭐ {stars}
+                ⏱ {formatElapsedTime(elapsedTimeMs)}
+                {typeof bestTimeMs === 'number' ? ` · Best ${formatElapsedTime(bestTimeMs)}` : ''}
             </div>
         </div>
     )
