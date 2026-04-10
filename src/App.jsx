@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useRef } from 'react'
 import { useTypingGame } from './hooks/useTypingGame'
-import { WORLD_META } from './game/content/worldMeta'
 import { useStageEffects } from './hooks/useStageEffects'
 import { StageHeader } from './components/StageHeader'
 import { TargetPanel } from './components/TargetPanel'
 import { QueueRow } from './components/QueueRow'
 import { ActionRow } from './components/ActionRow'
 import { KeyboardStage } from './components/KeyboardStage'
+import { getProgressionState } from './game/selectors/progressionSelectors'
 
 function App() {
   const {
@@ -38,20 +38,16 @@ function App() {
     }
   }, [playing, levelIndex, ui.target.mode])
 
-  const currentWorld = level.world
-  const currentWorldLevels = useMemo(
-      () => levels.filter((entry) => entry.world === currentWorld),
-      [levels, currentWorld],
+  const progression = useMemo(
+      () =>
+          getProgressionState({
+            levels,
+            level,
+            levelIndex,
+            complete,
+          }),
+      [levels, level, levelIndex, complete],
   )
-  const worldStartIndex = levels.findIndex((entry) => entry.world === currentWorld)
-  const currentLevelInWorld = levelIndex - worldStartIndex + 1
-  const hasNextLevel = levelIndex < levels.length - 1
-  const nextLevel = hasNextLevel ? levels[levelIndex + 1] : null
-  const nextWorld = nextLevel?.world ?? null
-  const gameFinished = complete && !hasNextLevel
-  const unlockedWorldMeta = WORLD_META.find((entry) => entry.world === nextWorld) ?? null
-  const isWorldBoundary = complete && (gameFinished || nextWorld !== currentWorld)
-  const isStandardLevelComplete = complete && !isWorldBoundary
 
   const effects = useStageEffects({
     ui,
@@ -60,11 +56,11 @@ function App() {
     complete,
     level,
     levelIndex,
-    currentWorld,
-    hasNextLevel,
-    isWorldBoundary,
-    isStandardLevelComplete,
-    gameFinished,
+    currentWorld: progression.currentWorld,
+    hasNextLevel: progression.hasNextLevel,
+    isWorldBoundary: progression.isWorldBoundary,
+    isStandardLevelComplete: progression.isStandardLevelComplete,
+    gameFinished: progression.gameFinished,
     goToLevel,
     goToNextLevel,
     targetAreaRef,
@@ -74,9 +70,11 @@ function App() {
     levelNodeRefs,
   })
 
-  const showNextButton = complete && hasNextLevel && !isWorldBoundary
-  const showWorldNextButton = hasNextLevel && isWorldBoundary && effects.showWorldCta
-  const showPlayAgainButton = gameFinished && effects.showWorldCta
+  const showNextButton =
+      complete && progression.hasNextLevel && !progression.isWorldBoundary
+  const showWorldNextButton =
+      progression.hasNextLevel && progression.isWorldBoundary && effects.showWorldCta
+  const showPlayAgainButton = progression.gameFinished && effects.showWorldCta
   const queueDimmed = effects.levelCompleteFx.active || effects.worldCompleteFx.active
 
   return (
@@ -86,13 +84,13 @@ function App() {
             <StageHeader
                 level={level}
                 stars={stars}
-                currentWorld={currentWorld}
-                currentWorldLevels={currentWorldLevels}
-                currentLevelInWorld={currentLevelInWorld}
-                nextWorld={nextWorld}
-                gameFinished={gameFinished}
-                isWorldBoundary={isWorldBoundary}
-                isStandardLevelComplete={isStandardLevelComplete}
+                currentWorld={progression.currentWorld}
+                currentWorldLevels={progression.currentWorldLevels}
+                currentLevelInWorld={progression.currentLevelInWorld}
+                nextWorld={progression.nextWorld}
+                gameFinished={progression.gameFinished}
+                isWorldBoundary={progression.isWorldBoundary}
+                isStandardLevelComplete={progression.isStandardLevelComplete}
                 worldCompleteFx={effects.worldCompleteFx}
                 levelCompleteFx={effects.levelCompleteFx}
                 starPulse={effects.starPulse}
@@ -119,8 +117,8 @@ function App() {
                 worldCompleteFx={effects.worldCompleteFx}
                 showLevelBanner={effects.showLevelBanner}
                 showPortalCard={effects.showPortalCard}
-                gameFinished={gameFinished}
-                unlockedWorldMeta={unlockedWorldMeta}
+                gameFinished={progression.gameFinished}
+                unlockedWorldMeta={progression.unlockedWorldMeta}
             />
 
             <QueueRow queue={ui.queue} dimmed={queueDimmed} />
@@ -131,7 +129,7 @@ function App() {
                 showPlayAgainButton={showPlayAgainButton}
                 nextCountdown={effects.nextCountdown}
                 worldCountdown={effects.worldCountdown}
-                unlockedWorldMeta={unlockedWorldMeta}
+                unlockedWorldMeta={progression.unlockedWorldMeta}
                 goToNextLevel={goToNextLevel}
                 goToLevel={goToLevel}
             />
