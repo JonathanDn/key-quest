@@ -1,0 +1,202 @@
+.mini-pill {
+    min-height: var(--mini-pill-min-height);
+    padding: 10px 16px;
+    border-radius: var(--radius-pill);
+    background: var(--color-glass-strong);
+    border: 2px solid var(--color-border);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-gap-sm);
+    font-weight: 800;
+    font-size: 1rem;
+}
+
+.progress-map {
+    width: min(760px, 100%);
+    display: grid;
+    gap: 12px;
+    justify-items: center;
+}
+
+.world-map {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.world-badge {
+    min-height: 48px;
+    padding: 10px 16px;
+    border-radius: var(--radius-pill);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    font-weight: 900;
+    color: var(--color-text);
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    opacity: 0.35;
+    transform: scale(0.96);
+    transition:
+            transform var(--transition-ui),
+            box-shadow var(--transition-ui),
+            background var(--transition-ui),
+            opacity var(--transition-ui);
+}
+
+.world-badge.done {
+    opacity: 0.8;
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.world-badge.current {
+    opacity: 1;
+    transform: scale(1.02);
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow:
+            0 0 0 2px var(--color-ring),
+            0 0 24px rgba(255, 255, 255, 0.12);
+}
+
+.world-badge.charge {
+    animation: world-badge-charge 0.72s ease;
+}
+
+.world-badge.lock-in {
+    opacity: 1;
+    transform: scale(1.04);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.14));
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow:
+            0 0 0 2px rgba(255, 255, 255, 0.2),
+            0 0 28px rgba(255, 255, 255, 0.24);
+}
+
+.world-badge.unlock-pulse {
+    opacity: 1;
+    animation: world-badge-unlock 0.72s ease;
+}
+
+.level-progress {
+    width: min(520px, 100%);
+    display: grid;
+    gap: 8px;
+    justify-items: center;
+}
+
+.level-trail {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.trail-segment {
+    width: 46px;
+    height: 8px;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.14);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    transition: background var(--transition-ui), box-shadow var(--transition-ui), transform var(--transition-ui);
+}
+
+.trail-segment.done {
+    background: linear-gradient(180deg, var(--color-button-start-top), var(--color-button-start-bottom));
+    border-color: transparent;
+    box-shadow: 0 0 14px rgba(255, 94, 124, 0.18);
+}
+
+.trail-segment.level-trail-pop {
+    animation: level-trail-pop 0.7s ease;
+}
+
+.level-node {
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-pill);
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.18);
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 900;
+    line-height: 1;
+    transition:
+            transform var(--transition-ui),
+            background var(--transition-ui),
+            box-shadow var(--transition-ui);
+}
+
+.level-node.done {
+    background: linear-gradient(180deg, var(--color-button-start-top), var(--color-button-start-bottom));
+    border-color: transparent;
+    box-shadow: 0 0 16px rgba(255, 94, 124, 0.22);
+}
+
+.level-node.current {
+    width: 30px;
+    height: 30px;
+    background: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.45);
+    transform: scale(1.05);
+}
+
+.level-node.celebrate {
+    animation: level-node-celebrate 0.72s ease;
+}
+
+.level-node.level-clear-pulse {
+    animation: level-clear-pulse 0.78s ease;
+}
+
+@media (max-width: 900px) {
+    .progress-map {
+        width: 100%;
+    }
+
+    .world-map {
+        gap: 10px;
+    }
+
+    .world-badge {
+        font-size: 0.95rem;
+        padding: 9px 14px;
+    }
+
+    .level-trail {
+        gap: 8px;
+    }
+
+    .trail-segment {
+        width: 34px;
+    }
+}
+
+@media (max-width: 560px) {
+    .world-badge {
+        min-height: 42px;
+        font-size: 0.9rem;
+        padding: 8px 12px;
+    }
+
+    .trail-segment {
+        width: 24px;
+        height: 7px;
+    }
+
+    .level-node {
+        width: 18px;
+        height: 18px;
+    }
+
+    .level-node.current {
+        width: 26px;
+        height: 26px;
+    }
+}

@@ -1,0 +1,594 @@
+.star-counter-pop {
+    animation: star-counter-pop 0.28s ease;
+}
+
+.flying-reward-star,
+.level-travel-star,
+.world-travel-star {
+    position: fixed;
+    left: var(--start-x);
+    top: var(--start-y);
+    transform: translate(-50%, -50%);
+    line-height: 1;
+    pointer-events: none;
+    z-index: 40;
+}
+
+.flying-reward-star {
+    font-size: 1.5rem;
+    animation: reward-star-flight 0.5s ease forwards;
+}
+
+.level-travel-star,
+.world-travel-star {
+    font-size: var(--star-size);
+    filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.35));
+}
+
+.level-travel-star {
+    animation: level-star-travel 0.72s cubic-bezier(0.2, 0.78, 0.2, 1) forwards;
+}
+
+.world-travel-star {
+    animation: world-star-travel 0.84s cubic-bezier(0.2, 0.78, 0.2, 1) forwards;
+}
+
+.level-complete-banner {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 6;
+    min-height: 60px;
+    padding: 12px 18px;
+    border-radius: 26px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(18, 8, 36, 0.92);
+    border: 2px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.24);
+    animation: level-banner-land 0.42s ease;
+    pointer-events: none;
+}
+
+.level-complete-badge {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 1.35rem;
+    background: rgba(255, 255, 255, 0.14);
+    box-shadow: 0 0 18px rgba(255, 255, 255, 0.12);
+}
+
+.level-complete-copy {
+    display: grid;
+    gap: 2px;
+    text-align: left;
+}
+
+.level-complete-title {
+    font-size: clamp(1.1rem, 2vw, 1.35rem);
+    font-weight: 900;
+    line-height: 1.05;
+}
+
+.level-complete-subtitle {
+    font-size: 0.92rem;
+    font-weight: 700;
+    opacity: 0.88;
+}
+
+.world-portal-card {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 14px;
+    text-align: center;
+    z-index: 6;
+    pointer-events: auto;
+}
+
+.world-complete-ring,
+.world-complete-key,
+.world-complete-title,
+.world-complete-subtitle,
+.world-complete-next-badge {
+    pointer-events: none;
+}
+
+.world-complete-ring {
+    position: absolute;
+    width: min(340px, 72vw);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 5px solid rgba(255, 255, 255, 0.9);
+    box-shadow:
+            0 0 40px rgba(255, 255, 255, 0.34),
+            inset 0 0 32px rgba(255, 255, 255, 0.12);
+    animation: world-portal-open 0.62s ease forwards;
+}
+
+.world-complete-key {
+    position: relative;
+    z-index: 1;
+    font-size: clamp(4rem, 10vw, 7rem);
+    line-height: 1;
+    filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.18));
+    animation: world-key-turn 0.72s ease;
+}
+
+.world-complete-title {
+    position: relative;
+    z-index: 1;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 900;
+    line-height: 1.05;
+}
+
+.world-complete-subtitle {
+    position: relative;
+    z-index: 1;
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    font-weight: 800;
+    opacity: 0.96;
+}
+
+.world-complete-next-badge {
+    position: relative;
+    z-index: 1;
+    min-height: 44px;
+    padding: 10px 16px;
+    border-radius: var(--radius-pill);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    font-weight: 900;
+    background: rgba(18, 8, 36, 0.68);
+    border: 2px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+}
+
+.world-complete-next-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+@keyframes level-summary-land {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, calc(-50% + 16px)) scale(0.94);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+@keyframes target-success-pop {
+    0% {
+        transform: scale(0.94);
+    }
+    55% {
+        transform: scale(1.04);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes level-final-hit {
+    0% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+    45% {
+        transform: scale(1.08);
+        filter: brightness(1.18);
+    }
+    100% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+}
+
+@keyframes praise-chip-float {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 10px) scale(0.9);
+    }
+    25% {
+        opacity: 1;
+        transform: translate(-50%, -4px) scale(1.04);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -18px) scale(1);
+    }
+}
+
+@keyframes sparkle-ring-burst {
+    0% {
+        opacity: 0.9;
+        transform: translate(-50%, -50%) scale(0.7);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.45);
+    }
+}
+
+@keyframes reward-star-flight {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.7);
+    }
+    25% {
+        opacity: 1;
+        transform: translate(calc(-50% + (var(--fly-x) * 0.2)), calc(-50% + (var(--fly-y) * 0.2))) scale(1.12);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--fly-x)), calc(-50% + var(--fly-y))) scale(0.66);
+    }
+}
+
+@keyframes star-counter-pop {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.12);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes queue-bubble-snap {
+    0% {
+        transform: scale(0.92);
+    }
+    60% {
+        transform: scale(1.12);
+    }
+    100% {
+        transform: scale(1.08);
+    }
+}
+
+@keyframes sparkle-1 {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(0.5);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(0, -44px) scale(1);
+    }
+}
+
+@keyframes sparkle-2 {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(0.5);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(34px, -24px) scale(1);
+    }
+}
+
+@keyframes sparkle-3 {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(0.5);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(42px, 10px) scale(1);
+    }
+}
+
+@keyframes sparkle-4 {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(0.5);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(0, 40px) scale(1);
+    }
+}
+
+@keyframes sparkle-5 {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(0.5);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-34px, 22px) scale(1);
+    }
+}
+
+@keyframes sparkle-6 {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(0.5);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-40px, -20px) scale(1);
+    }
+}
+
+@keyframes level-banner-land {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 12px) scale(0.92);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+    }
+}
+
+@keyframes level-trail-pop {
+    0% {
+        transform: scaleX(1);
+        box-shadow: 0 0 14px rgba(255, 94, 124, 0.18);
+    }
+    50% {
+        transform: scaleX(1.08);
+        box-shadow: 0 0 24px rgba(255, 255, 255, 0.34);
+    }
+    100% {
+        transform: scaleX(1);
+        box-shadow: 0 0 14px rgba(255, 94, 124, 0.18);
+    }
+}
+
+@keyframes level-clear-pulse {
+    0% {
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.45);
+    }
+    50% {
+        transform: scale(1.22);
+        box-shadow: 0 0 34px rgba(255, 255, 255, 0.62);
+    }
+    100% {
+        transform: scale(1.08);
+        box-shadow: 0 0 24px rgba(255, 255, 255, 0.52);
+    }
+}
+
+@keyframes level-star-travel {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.42);
+    }
+    16% {
+        opacity: 1;
+        transform: translate(calc(-50% + var(--launch-x)), calc(-50% + var(--launch-y))) scale(1.04);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--fly-x)), calc(-50% + var(--fly-y))) scale(0.56);
+    }
+}
+
+@keyframes world-final-hit {
+    0% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+    40% {
+        transform: scale(1.06);
+        filter: brightness(1.24);
+    }
+    100% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+}
+
+@keyframes world-target-settle {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+        filter: brightness(1);
+    }
+    100% {
+        opacity: 0.22;
+        transform: scale(0.94);
+        filter: brightness(0.9);
+    }
+}
+
+@keyframes world-badge-charge {
+    0% {
+        transform: scale(1.02);
+        box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    }
+    50% {
+        transform: scale(1.14);
+        box-shadow:
+                0 0 0 2px rgba(255, 255, 255, 0.18),
+                0 0 34px rgba(255, 255, 255, 0.28);
+    }
+    100% {
+        transform: scale(1.02);
+        box-shadow:
+                0 0 0 2px rgba(255, 255, 255, 0.12),
+                0 0 24px rgba(255, 255, 255, 0.12);
+    }
+}
+
+@keyframes world-badge-unlock {
+    0% {
+        transform: scale(0.96);
+        opacity: 0.56;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+        box-shadow:
+                0 0 0 2px rgba(255, 255, 255, 0.18),
+                0 0 30px rgba(255, 255, 255, 0.24);
+    }
+    100% {
+        transform: scale(1.02);
+        opacity: 1;
+    }
+}
+
+@keyframes level-node-celebrate {
+    0% {
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.45);
+    }
+    50% {
+        transform: scale(1.18);
+        box-shadow: 0 0 30px rgba(255, 255, 255, 0.55);
+    }
+    100% {
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.45);
+    }
+}
+
+@keyframes world-key-turn {
+    0% {
+        opacity: 0;
+        transform: scale(0.72) rotate(-24deg);
+    }
+    60% {
+        opacity: 1;
+        transform: scale(1.08) rotate(10deg);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+@keyframes world-portal-open {
+    0% {
+        opacity: 0;
+        transform: scale(0.52);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes world-star-travel {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.42);
+    }
+    14% {
+        opacity: 1;
+        transform: translate(calc(-50% + var(--launch-x)), calc(-50% + var(--launch-y))) scale(1.05);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--fly-x)), calc(-50% + var(--fly-y))) scale(0.58);
+    }
+}
+
+@keyframes world-cta-land {
+    0% {
+        opacity: 0;
+        transform: translateY(12px) scale(0.92);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes zone-burst {
+    0% {
+        transform: scale(0.98);
+        box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    }
+    50% {
+        transform: scale(1.02);
+        box-shadow: 0 0 26px rgba(255, 255, 255, 0.24);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    }
+}
+
+@keyframes chip-pop {
+    0% {
+        opacity: 0.2;
+        transform: scale(0.8) translateY(8px);
+    }
+    60% {
+        opacity: 1;
+        transform: scale(1.06) translateY(-2px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@media (max-width: 900px) {
+    .world-complete-ring {
+        width: min(300px, 80vw);
+    }
+
+    .world-complete-key {
+        font-size: clamp(3.4rem, 11vw, 5.4rem);
+    }
+
+    .level-complete-banner {
+        width: min(92vw, 420px);
+    }
+}
+
+@media (max-width: 560px) {
+    .world-complete-title {
+        font-size: 1.55rem;
+    }
+
+    .world-complete-subtitle {
+        font-size: 0.96rem;
+    }
+
+    .world-complete-next-badge {
+        font-size: 0.92rem;
+        padding: 9px 14px;
+    }
+
+    .level-complete-banner {
+        width: min(94vw, 320px);
+        padding: 10px 14px;
+        gap: 10px;
+    }
+
+    .level-complete-title {
+        font-size: 1rem;
+    }
+
+    .level-complete-subtitle {
+        font-size: 0.82rem;
+    }
+}

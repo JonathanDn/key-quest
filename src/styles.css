@@ -1,4 +1,4 @@
 @import './styles/tokens.css';
 @import './styles/layout.css';
-@import './styles/stage.css';
+@import './styles/stage/index.css';
 @import './styles/keyboard.css';

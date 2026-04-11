@@ -1,0 +1,121 @@
+.finger-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: var(--radius-pill);
+    box-shadow: 0 0 14px currentColor;
+    flex: 0 0 auto;
+}
+
+.queue-row {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-gap-sm);
+    flex-wrap: wrap;
+    min-height: 0;
+    transition:
+            opacity 0.35s ease,
+            transform 0.35s ease,
+            filter 0.35s ease;
+}
+
+.queue-row.complete-dim {
+    opacity: 0.16;
+    transform: scale(0.97);
+    filter: blur(1px);
+}
+
+.queue-bubble {
+    width: var(--queue-bubble-size);
+    height: var(--queue-bubble-size);
+    border-radius: var(--radius-bubble);
+    display: grid;
+    place-items: center;
+    padding: 0 10px;
+    font-size: 1.9rem;
+    font-weight: 900;
+    color: var(--color-text);
+    background: var(--color-glass);
+    border: 3px solid var(--color-border);
+    opacity: 0.48;
+    transform: scale(0.96);
+    user-select: none;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.queue-bubble.wide {
+    width: 148px;
+    font-size: 1.1rem;
+    letter-spacing: 0.03em;
+}
+
+.queue-bubble.combo {
+    width: 160px;
+    font-size: 1rem;
+}
+
+.queue-bubble.active {
+    opacity: 1;
+    transform: scale(1.08);
+    border-color: var(--bubble-color);
+    box-shadow: 0 0 24px var(--bubble-color);
+    animation: queue-bubble-snap 0.28s ease;
+}
+
+.big-button,
+.soft-button {
+    border: 0;
+    color: var(--color-text);
+    transition:
+            transform var(--transition-ui),
+            box-shadow var(--transition-ui),
+            background var(--transition-ui);
+}
+
+.big-button:hover,
+.soft-button:hover {
+    transform: translateY(-2px);
+}
+
+.big-button {
+    min-width: 180px;
+    min-height: 64px;
+    padding: 14px 24px;
+    border-radius: var(--radius-pill);
+    font-size: 1.25rem;
+    font-weight: 900;
+    background: linear-gradient(180deg, var(--color-button-start-top), var(--color-button-start-bottom));
+    box-shadow: var(--shadow-button);
+}
+
+.soft-button {
+    min-width: 120px;
+    min-height: 64px;
+    padding: 14px 24px;
+    border-radius: var(--radius-pill);
+    font-size: 1.1rem;
+    font-weight: 800;
+    background: var(--color-glass-stronger);
+}
+
+.world-enter-button {
+    animation: world-cta-land 0.35s ease;
+}
+
+@media (max-width: 900px) {
+    .queue-bubble {
+        width: var(--queue-bubble-size-mobile);
+        height: var(--queue-bubble-size-mobile);
+        font-size: 1.5rem;
+    }
+
+    .queue-bubble.wide {
+        width: 120px;
+        font-size: 0.92rem;
+    }
+
+    .queue-bubble.combo {
+        width: 126px;
+        font-size: 0.88rem;
+    }
+}

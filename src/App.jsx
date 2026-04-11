@@ -4,7 +4,6 @@ import { useStageEffects } from './hooks/useStageEffects'
 import { StageHeader } from './components/StageHeader'
 import { TargetPanel } from './components/TargetPanel'
 import { QueueRow } from './components/QueueRow'
-import { ActionRow } from './components/ActionRow'
 import { KeyboardStage } from './components/KeyboardStage'
 import { getProgressionState } from './game/selectors/progressionSelectors'
 import {
@@ -79,6 +78,7 @@ function GameExperience({ playerName }) {
       progression.hasNextLevel && progression.isWorldBoundary && effects.showWorldCta
   const showPlayAgainButton = progression.gameFinished && effects.showWorldCta
   const queueDimmed = effects.levelCompleteFx.active || effects.worldCompleteFx.active
+
   const levelSummary = complete
       ? {
         currentRunTimeMs: elapsedTimeMs,
@@ -87,6 +87,22 @@ function GameExperience({ playerName }) {
         isNewBestTime,
       }
       : null
+
+  const summaryActionLabel = showNextButton
+      ? 'Next level'
+      : showWorldNextButton
+          ? `Enter ${progression.unlockedWorldMeta?.title}`
+          : showPlayAgainButton
+              ? 'Play again'
+              : ''
+
+  const summaryActionButtonClassName = showNextButton
+      ? 'soft-button'
+      : 'big-button world-enter-button'
+
+  const handleSummaryAction = showPlayAgainButton
+      ? () => goToLevel(0)
+      : goToNextLevel
 
   return (
       <div className="game-shell">
@@ -112,9 +128,11 @@ function GameExperience({ playerName }) {
                 levelNodeRefs={levelNodeRefs}
             />
 
-            <div className="guidance-row">
-              <div className="message-line">{message}</div>
-            </div>
+            {!complete ? (
+                <div className="guidance-row">
+                  <div className="message-line">{message}</div>
+                </div>
+            ) : null}
 
             <TargetPanel
                 refTargetArea={targetAreaRef}
@@ -133,18 +151,13 @@ function GameExperience({ playerName }) {
                 gameFinished={progression.gameFinished}
                 unlockedWorldMeta={progression.unlockedWorldMeta}
                 levelSummary={levelSummary}
+                completionMessage={complete ? message : ''}
+                summaryActionLabel={summaryActionLabel}
+                summaryActionButtonClassName={summaryActionButtonClassName}
+                onSummaryAction={summaryActionLabel ? handleSummaryAction : undefined}
             />
 
             <QueueRow queue={ui.queue} dimmed={queueDimmed} />
-
-            <ActionRow
-                showNextButton={showNextButton}
-                showWorldNextButton={showWorldNextButton}
-                showPlayAgainButton={showPlayAgainButton}
-                unlockedWorldMeta={progression.unlockedWorldMeta}
-                goToNextLevel={goToNextLevel}
-                goToLevel={goToLevel}
-            />
 
             {effects.flyingStar ? (
                 <div
