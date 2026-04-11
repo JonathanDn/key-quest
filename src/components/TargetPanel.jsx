@@ -11,18 +11,20 @@ function renderWordChips(text) {
 
     return text.split(' ').map((part, index) => (
         <span className="word-chip" key={`${part}-${index}`}>
-      {part}
-    </span>
+            {part}
+        </span>
     ))
 }
 
 function LevelSummaryCard({
                               levelSummary,
+                              variant = 'level',
                               compact = false,
-                              completionMessage = '',
                               actionLabel = '',
                               actionButtonClassName = 'soft-button',
                               onAction,
+                              unlockedWorldMeta,
+                              gameFinished = false,
                           }) {
     if (!levelSummary) {
         return null
@@ -31,19 +33,39 @@ function LevelSummaryCard({
     const { currentRunTimeMs, bestTimeMs, sessionAttemptTimes, isNewBestTime } = levelSummary
     const visibleAttempts = sessionAttemptTimes.slice(-5)
     const firstVisibleIndex = sessionAttemptTimes.length - visibleAttempts.length
+    const isWorldSummary = variant === 'world'
+
+    const title = isWorldSummary
+        ? (gameFinished ? 'Key Quest Complete!' : 'World Complete!')
+        : 'Level Clear!'
+
+    const subtitle = isWorldSummary
+        ? (gameFinished ? 'You finished every world.' : `You unlocked ${unlockedWorldMeta?.title}.`)
+        : 'See this run before you move on.'
 
     return (
-        <div className={['level-summary-card', compact ? 'compact' : ''].join(' ')}>
+        <div
+            className={[
+                'level-summary-card',
+                compact ? 'compact' : '',
+                isWorldSummary ? 'world-summary' : '',
+            ].join(' ')}
+        >
             <div className="level-summary-header">
                 <div className="level-summary-title-row">
-                    <div className="level-summary-icon">🏅</div>
+                    {!isWorldSummary ? (
+                        <div className="level-summary-icon">🏅</div>
+                    ) : null}
+
                     <div>
-                        <div className="level-summary-title">Level Clear!</div>
-                        <div className="level-summary-subtitle">See this run before you move on.</div>
+                        <div className="level-summary-title">{title}</div>
+                        <div className="level-summary-subtitle">{subtitle}</div>
                     </div>
                 </div>
 
-                {isNewBestTime ? <div className="level-summary-best-badge">✨ New best!</div> : null}
+                {!isWorldSummary && isNewBestTime ? (
+                    <div className="level-summary-best-badge">✨ New best!</div>
+                ) : null}
             </div>
 
             <div className="level-summary-stats">
@@ -58,32 +80,30 @@ function LevelSummaryCard({
                 </div>
             </div>
 
-            <div className="level-summary-attempts">
-                <div className="level-summary-attempts-label">This session</div>
-                <div className="level-summary-attempt-chips">
-                    {visibleAttempts.map((timeMs, index) => {
-                        const actualIndex = firstVisibleIndex + index
-                        const isLatest = actualIndex === sessionAttemptTimes.length - 1
-                        const isBest = typeof bestTimeMs === 'number' && timeMs === bestTimeMs
+            {!isWorldSummary ? (
+                <div className="level-summary-attempts">
+                    <div className="level-summary-attempts-label">This session</div>
+                    <div className="level-summary-attempt-chips">
+                        {visibleAttempts.map((timeMs, index) => {
+                            const actualIndex = firstVisibleIndex + index
+                            const isLatest = actualIndex === sessionAttemptTimes.length - 1
+                            const isBest = typeof bestTimeMs === 'number' && timeMs === bestTimeMs
 
-                        return (
-                            <span
-                                key={`${timeMs}-${actualIndex}`}
-                                className={[
-                                    'level-summary-attempt-chip',
-                                    isLatest ? 'latest' : '',
-                                    isBest ? 'best' : '',
-                                ].join(' ')}
-                            >
-                {formatElapsedTime(timeMs)}
-              </span>
-                        )
-                    })}
+                            return (
+                                <span
+                                    key={`${timeMs}-${actualIndex}`}
+                                    className={[
+                                        'level-summary-attempt-chip',
+                                        isLatest ? 'latest' : '',
+                                        isBest ? 'best' : '',
+                                    ].join(' ')}
+                                >
+                                    {formatElapsedTime(timeMs)}
+                                </span>
+                            )
+                        })}
+                    </div>
                 </div>
-            </div>
-
-            {completionMessage ? (
-                <div className="level-summary-message-pill">{completionMessage}</div>
             ) : null}
 
             {actionLabel && onAction ? (
@@ -118,7 +138,6 @@ export function TargetPanel({
                                 gameFinished,
                                 unlockedWorldMeta,
                                 levelSummary,
-                                completionMessage,
                                 summaryActionLabel,
                                 summaryActionButtonClassName,
                                 onSummaryAction,
@@ -225,8 +244,8 @@ export function TargetPanel({
                                     <React.Fragment key={chip.code}>
                                         {index > 0 ? <span className="combo-plus">+</span> : null}
                                         <span className={chip.held ? 'combo-chip held' : 'combo-chip'}>
-                      {chip.label}
-                    </span>
+                                            {chip.label}
+                                        </span>
                                     </React.Fragment>
                                 ))}
                             </div>
@@ -246,7 +265,7 @@ export function TargetPanel({
             {showLevelSummary ? (
                 <LevelSummaryCard
                     levelSummary={levelSummary}
-                    completionMessage={completionMessage}
+                    variant="level"
                     actionLabel={summaryActionLabel}
                     actionButtonClassName={summaryActionButtonClassName}
                     onAction={onSummaryAction}
@@ -254,36 +273,18 @@ export function TargetPanel({
             ) : null}
 
             {showPortalCard ? (
-                <div className="world-portal-card" aria-hidden="true">
-                    <div className="world-complete-ring" />
-                    <div className="world-complete-key">🗝️</div>
-
-                    <div className="world-complete-title">
-                        {gameFinished ? 'Key Quest Complete!' : 'World Complete!'}
-                    </div>
-
-                    <div className="world-complete-subtitle">
-                        {gameFinished
-                            ? 'You finished every world'
-                            : `You unlocked ${unlockedWorldMeta?.title}`}
-                    </div>
-
-                    <div className="world-complete-next-badge">
-            <span className="world-complete-next-icon">
-              {gameFinished ? '🏆' : unlockedWorldMeta?.icon}
-            </span>
-                        <span>
-              {gameFinished ? 'All worlds cleared' : unlockedWorldMeta?.title}
-            </span>
-                    </div>
+                <div className="world-portal-card">
+                    <div className="world-complete-ring" aria-hidden="true" />
 
                     <LevelSummaryCard
                         levelSummary={levelSummary}
+                        variant="world"
                         compact
-                        completionMessage={completionMessage}
                         actionLabel={summaryActionLabel}
                         actionButtonClassName={summaryActionButtonClassName}
                         onAction={onSummaryAction}
+                        unlockedWorldMeta={unlockedWorldMeta}
+                        gameFinished={gameFinished}
                     />
                 </div>
             ) : null}

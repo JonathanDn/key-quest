@@ -151,7 +151,6 @@ function GameExperience({ playerName }) {
                 gameFinished={progression.gameFinished}
                 unlockedWorldMeta={progression.unlockedWorldMeta}
                 levelSummary={levelSummary}
-                completionMessage={complete ? message : ''}
                 summaryActionLabel={summaryActionLabel}
                 summaryActionButtonClassName={summaryActionButtonClassName}
                 onSummaryAction={summaryActionLabel ? handleSummaryAction : undefined}
