@@ -4,6 +4,7 @@ import {
     createInitialGameSession,
     gameSessionReducer,
     normalizeKeyCode,
+    normalizePlayerName,
     saveBestTimesToStorage,
     selectGameSession,
     shouldPreventDefaultForSession,
@@ -15,10 +16,15 @@ function randomPick(list) {
     return list[Math.floor(Math.random() * list.length)]
 }
 
-export function useTypingGame() {
+export function useTypingGame(playerName) {
+    const normalizedPlayerName = useMemo(
+        () => normalizePlayerName(playerName),
+        [playerName],
+    )
+
     const [session, dispatch] = useReducer(
         gameSessionReducer,
-        undefined,
+        normalizedPlayerName,
         createInitialGameSession,
     )
 
@@ -28,16 +34,36 @@ export function useTypingGame() {
         sessionRef.current = session
     }, [session])
 
+    useEffect(() => {
+        if (session.playerName === normalizedPlayerName) {
+            return
+        }
+
+        dispatch({
+            type: 'LOAD_PLAYER_PROFILE',
+            playerName: normalizedPlayerName,
+        })
+    }, [normalizedPlayerName, session.playerName])
+
     const game = useMemo(() => selectGameSession(session), [session])
 
     useEffect(() => {
-        saveBestTimesToStorage(session.bestTimesByLevelId)
-    }, [session.bestTimesByLevelId])
+        if (!session.playerName) {
+            return
+        }
+
+        saveBestTimesToStorage(session.playerName, session.bestTimesByLevelId)
+    }, [session.playerName, session.bestTimesByLevelId])
 
     useEffect(() => {
         function onKeyDown(event) {
-            const normalizedCode = normalizeKeyCode(event.code)
             const currentSession = sessionRef.current
+
+            if (!currentSession.playerName) {
+                return
+            }
+
+            const normalizedCode = normalizeKeyCode(event.code)
 
             if (normalizedCode === 'Enter' && currentSession.complete && !event.repeat) {
                 event.preventDefault()
@@ -69,6 +95,12 @@ export function useTypingGame() {
         }
 
         function onKeyUp(event) {
+            const currentSession = sessionRef.current
+
+            if (!currentSession.playerName) {
+                return
+            }
+
             dispatch({
                 type: 'KEY_UP',
                 normalizedCode: normalizeKeyCode(event.code),

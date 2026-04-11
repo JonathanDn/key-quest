@@ -77,6 +77,33 @@ button {
     justify-self: start;
 }
 
+.mini-pill.top-bar-context-stack {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2px;
+    text-align: left;
+}
+
+.top-bar-context-player,
+.top-bar-context-level {
+    display: block;
+}
+
+.top-bar-context-player {
+    font-size: 1rem;
+    font-weight: 900;
+    line-height: 1.05;
+}
+
+.top-bar-context-level {
+    font-size: 0.88rem;
+    font-weight: 800;
+    line-height: 1.05;
+    opacity: 0.82;
+}
+
 .top-bar-pill {
     justify-self: end;
 }
@@ -112,11 +139,121 @@ button {
     .top-bar-pill {
         justify-self: center;
     }
+
+    .mini-pill.top-bar-context-stack {
+        align-items: center;
+        text-align: center;
+    }
 }
 
 @media (max-width: 560px) {
     .big-button,
     .soft-button {
         width: 100%;
+    }
+}
+
+.launch-card {
+    width: min(560px, 100%);
+    padding: clamp(24px, 4vw, 34px);
+    border-radius: var(--radius-panel);
+    background: var(--color-glass);
+    border: 2px solid var(--color-border);
+    box-shadow: var(--shadow-panel);
+    display: grid;
+    gap: 22px;
+    text-align: left;
+}
+
+.launch-card-badge {
+    min-height: 40px;
+    padding: 8px 14px;
+    border-radius: var(--radius-pill);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: start;
+    background: rgba(255, 255, 255, 0.14);
+    border: 2px solid rgba(255, 255, 255, 0.14);
+    font-size: 0.95rem;
+    font-weight: 900;
+}
+
+.launch-card-copy {
+    display: grid;
+    gap: 10px;
+}
+
+.launch-card-title {
+    margin: 0;
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 0.98;
+}
+
+.launch-card-text,
+.launch-card-subtext {
+    margin: 0;
+    max-width: 34ch;
+    font-size: 1.02rem;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.launch-card-subtext {
+    opacity: 0.82;
+}
+
+.launch-form {
+    display: grid;
+    gap: 12px;
+}
+
+.launch-label {
+    font-size: 0.95rem;
+    font-weight: 900;
+}
+
+.launch-input {
+    width: 100%;
+    min-height: 64px;
+    padding: 14px 18px;
+    border-radius: 20px;
+    background: rgba(18, 8, 36, 0.78);
+    color: #ffffff;
+    border: 2px solid rgba(255, 255, 255, 0.16);
+    outline: none;
+    font-size: 1.1rem;
+    font-weight: 800;
+    transition:
+            border-color 0.18s ease,
+            box-shadow 0.18s ease,
+            transform 0.18s ease;
+}
+
+.launch-input::placeholder {
+    color: rgba(255, 255, 255, 0.46);
+}
+
+.launch-input:focus {
+    border-color: rgba(255, 255, 255, 0.32);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.08);
+}
+
+.launch-error {
+    min-height: 24px;
+    color: #ffd84d;
+    font-size: 0.95rem;
+    font-weight: 800;
+}
+
+.launch-button {
+    width: 100%;
+    margin-top: 4px;
+}
+
+@media (max-width: 900px) {
+    .launch-card {
+        padding: 22px;
+        border-radius: var(--radius-panel-mobile);
     }
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useTypingGame } from './hooks/useTypingGame'
 import { useStageEffects } from './hooks/useStageEffects'
 import { StageHeader } from './components/StageHeader'
@@ -7,8 +7,13 @@ import { QueueRow } from './components/QueueRow'
 import { ActionRow } from './components/ActionRow'
 import { KeyboardStage } from './components/KeyboardStage'
 import { getProgressionState } from './game/selectors/progressionSelectors'
+import {
+  loadLastPlayerNameFromStorage,
+  normalizePlayerName,
+  saveLastPlayerNameToStorage,
+} from './game/session/gameSession'
 
-function App() {
+function GameExperience({ playerName }) {
   const {
     levels,
     level,
@@ -26,7 +31,7 @@ function App() {
     successFx,
     goToLevel,
     goToNextLevel,
-  } = useTypingGame()
+  } = useTypingGame(playerName)
 
   const gameAreaRef = useRef(null)
   const targetAreaRef = useRef(null)
@@ -88,6 +93,7 @@ function App() {
         <div className="game-screen">
           <main className="stage-card" ref={gameAreaRef} tabIndex={-1}>
             <StageHeader
+                playerName={playerName}
                 level={level}
                 elapsedTimeMs={elapsedTimeMs}
                 bestTimeMs={bestTimeMs}
@@ -204,6 +210,77 @@ function App() {
         </div>
       </div>
   )
+}
+
+function App() {
+  const [draftPlayerName, setDraftPlayerName] = useState(() => loadLastPlayerNameFromStorage())
+  const [activePlayerName, setActivePlayerName] = useState(() => loadLastPlayerNameFromStorage())
+  const [nameError, setNameError] = useState('')
+
+  function handleSubmit(event) {
+    event.preventDefault()
+
+    const normalizedPlayerName = normalizePlayerName(draftPlayerName)
+
+    if (!normalizedPlayerName) {
+      setNameError('Please type your name or nickname.')
+      return
+    }
+
+    saveLastPlayerNameToStorage(normalizedPlayerName)
+    setNameError('')
+    setActivePlayerName(normalizedPlayerName)
+  }
+
+  if (!activePlayerName) {
+    return (
+        <div className="game-shell">
+          <section className="launch-card" aria-labelledby="launch-title">
+            <div className="launch-card-badge">⭐ Score Keeper</div>
+
+            <div className="launch-card-copy">
+              <h1 className="launch-card-title" id="launch-title">Who is playing today?</h1>
+              <p className="launch-card-text">
+                Type a name or nickname before the game starts.
+              </p>
+              <p className="launch-card-subtext">
+                That name will match the best scores saved on this device.
+              </p>
+            </div>
+
+            <form className="launch-form" onSubmit={handleSubmit}>
+              <label className="launch-label" htmlFor="player-name-input">
+                Name or nickname
+              </label>
+
+              <input
+                  id="player-name-input"
+                  className="launch-input"
+                  type="text"
+                  value={draftPlayerName}
+                  onChange={(event) => {
+                    setDraftPlayerName(event.target.value)
+                    if (nameError) {
+                      setNameError('')
+                    }
+                  }}
+                  placeholder="Type a name"
+                  maxLength={24}
+                  autoFocus
+              />
+
+              {nameError ? <div className="launch-error">{nameError}</div> : null}
+
+              <button className="big-button launch-button" type="submit">
+                Start game
+              </button>
+            </form>
+          </section>
+        </div>
+    )
+  }
+
+  return <GameExperience playerName={activePlayerName} />
 }
 
 export default App

@@ -6,6 +6,7 @@ function formatElapsedTime(elapsedTimeMs) {
 }
 
 export function StageHeader({
+                                playerName,
                                 level,
                                 elapsedTimeMs,
                                 bestTimeMs,
@@ -25,8 +26,13 @@ export function StageHeader({
                             }) {
     return (
         <div className="top-bar">
-            <div className="mini-pill top-bar-context-pill">
-                {level.title} · {currentLevelInWorld}/{currentWorldLevels.length}
+            <div className="mini-pill top-bar-context-pill top-bar-context-stack">
+                {playerName ? (
+                    <span className="top-bar-context-player">{playerName}</span>
+                ) : null}
+                <span className="top-bar-context-level">
+                    {level.title} · {currentLevelInWorld}/{currentWorldLevels.length}
+                </span>
             </div>
 
             <div className="progress-map">

@@ -3,7 +3,9 @@ import { getLessonEngine } from '../engine/lessonEngine'
 import { buildStageView } from '../ui/viewModel'
 
 const HAPPY_MESSAGES = ['Nice!', 'Yay!', 'Great!', 'Awesome!', 'You got it!']
-const BEST_TIMES_STORAGE_KEY = 'key-quest-best-times-v1'
+const LEGACY_BEST_TIMES_STORAGE_KEY = 'key-quest-best-times-v1'
+const BEST_TIMES_BY_PLAYER_STORAGE_KEY = 'key-quest-best-times-by-player-v1'
+const LAST_PLAYER_NAME_STORAGE_KEY = 'key-quest-last-player-v1'
 
 const EMPTY_STAGE_STATE = {
     taskLabel: '',
@@ -20,13 +22,35 @@ function formatElapsedTime(elapsedTimeMs) {
     return `${(Math.max(elapsedTimeMs, 0) / 1000).toFixed(1)}s`
 }
 
-function loadBestTimesFromStorage() {
+export function normalizePlayerName(playerName) {
+    if (typeof playerName !== 'string') {
+        return ''
+    }
+
+    return playerName.replace(/\s+/g, ' ').trim().slice(0, 24)
+}
+
+function sanitizeBestTimesRecord(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return {}
+    }
+
+    return Object.fromEntries(
+        Object.entries(value).filter(([, entryValue]) => (
+            typeof entryValue === 'number' &&
+            Number.isFinite(entryValue) &&
+            entryValue >= 0
+        )),
+    )
+}
+
+function readStorageObject(storageKey) {
     if (typeof window === 'undefined') {
         return {}
     }
 
     try {
-        const raw = window.localStorage.getItem(BEST_TIMES_STORAGE_KEY)
+        const raw = window.localStorage.getItem(storageKey)
 
         if (!raw) {
             return {}
@@ -38,31 +62,127 @@ function loadBestTimesFromStorage() {
             return {}
         }
 
-        return Object.fromEntries(
-            Object.entries(parsed).filter(([, value]) => (
-                typeof value === 'number' &&
-                Number.isFinite(value) &&
-                value >= 0
-            )),
-        )
+        return parsed
     } catch {
         return {}
     }
 }
 
-export function saveBestTimesToStorage(bestTimesByLevelId) {
+function loadAllBestTimesByPlayer() {
+    const rawPlayers = readStorageObject(BEST_TIMES_BY_PLAYER_STORAGE_KEY)
+
+    return Object.fromEntries(
+        Object.entries(rawPlayers)
+            .map(([playerName, bestTimes]) => [
+                normalizePlayerName(playerName),
+                sanitizeBestTimesRecord(bestTimes),
+            ])
+            .filter(([playerName]) => Boolean(playerName)),
+    )
+}
+
+function saveAllBestTimesByPlayer(bestTimesByPlayer) {
     if (typeof window === 'undefined') {
         return
     }
 
     try {
         window.localStorage.setItem(
-            BEST_TIMES_STORAGE_KEY,
-            JSON.stringify(bestTimesByLevelId),
+            BEST_TIMES_BY_PLAYER_STORAGE_KEY,
+            JSON.stringify(bestTimesByPlayer),
         )
     } catch {
         // Ignore storage failures so gameplay never breaks.
     }
+}
+
+function maybeMigrateLegacyBestTimes(playerName, bestTimesByPlayer) {
+    if (!playerName || Object.keys(bestTimesByPlayer).length > 0 || typeof window === 'undefined') {
+        return bestTimesByPlayer
+    }
+
+    const legacyBestTimes = sanitizeBestTimesRecord(readStorageObject(LEGACY_BEST_TIMES_STORAGE_KEY))
+
+    if (!Object.keys(legacyBestTimes).length) {
+        return bestTimesByPlayer
+    }
+
+    const migratedBestTimesByPlayer = {
+        ...bestTimesByPlayer,
+        [playerName]: legacyBestTimes,
+    }
+
+    saveAllBestTimesByPlayer(migratedBestTimesByPlayer)
+
+    try {
+        window.localStorage.removeItem(LEGACY_BEST_TIMES_STORAGE_KEY)
+    } catch {
+        // Ignore storage failures so gameplay never breaks.
+    }
+
+    return migratedBestTimesByPlayer
+}
+
+export function loadLastPlayerNameFromStorage() {
+    if (typeof window === 'undefined') {
+        return ''
+    }
+
+    try {
+        return normalizePlayerName(
+            window.localStorage.getItem(LAST_PLAYER_NAME_STORAGE_KEY) ?? '',
+        )
+    } catch {
+        return ''
+    }
+}
+
+export function saveLastPlayerNameToStorage(playerName) {
+    if (typeof window === 'undefined') {
+        return
+    }
+
+    const normalizedPlayerName = normalizePlayerName(playerName)
+
+    if (!normalizedPlayerName) {
+        return
+    }
+
+    try {
+        window.localStorage.setItem(LAST_PLAYER_NAME_STORAGE_KEY, normalizedPlayerName)
+    } catch {
+        // Ignore storage failures so gameplay never breaks.
+    }
+}
+
+function loadBestTimesFromStorage(playerName) {
+    const normalizedPlayerName = normalizePlayerName(playerName)
+
+    if (!normalizedPlayerName) {
+        return {}
+    }
+
+    const bestTimesByPlayer = maybeMigrateLegacyBestTimes(
+        normalizedPlayerName,
+        loadAllBestTimesByPlayer(),
+    )
+
+    return sanitizeBestTimesRecord(bestTimesByPlayer[normalizedPlayerName])
+}
+
+export function saveBestTimesToStorage(playerName, bestTimesByLevelId) {
+    const normalizedPlayerName = normalizePlayerName(playerName)
+
+    if (!normalizedPlayerName) {
+        return
+    }
+
+    const bestTimesByPlayer = loadAllBestTimesByPlayer()
+
+    saveAllBestTimesByPlayer({
+        ...bestTimesByPlayer,
+        [normalizedPlayerName]: sanitizeBestTimesRecord(bestTimesByLevelId),
+    })
 }
 
 function getLevel(levelIndex) {
@@ -97,13 +217,14 @@ function getElapsedTimeMs(state, now = Date.now()) {
     return Math.max(state.elapsedTimeMs, now - state.timerStartedAt)
 }
 
-function buildLevelSession(levelIndex, bestTimesByLevelId = {}, attemptsByLevelId = {}) {
+function buildLevelSession(levelIndex, bestTimesByLevelId = {}, attemptsByLevelId = {}, playerName = '') {
     const level = getLevel(levelIndex)
     const engine = getEngine(level)
     const round = engine.createRound(level)
     const currentTarget = round[0]
 
     return {
+        playerName,
         levelIndex,
         round,
         currentIndex: 0,
@@ -277,11 +398,14 @@ export function normalizeKeyCode(code) {
     return code === 'Space' ? 'Space' : code
 }
 
-export function createInitialGameSession() {
+export function createInitialGameSession(playerName = '') {
+    const normalizedPlayerName = normalizePlayerName(playerName)
+
     return buildLevelSession(
         INITIAL_LEVEL_INDEX,
-        loadBestTimesFromStorage(),
+        loadBestTimesFromStorage(normalizedPlayerName),
         {},
+        normalizedPlayerName,
     )
 }
 
@@ -301,7 +425,11 @@ export function gameSessionReducer(state, action) {
                 action.levelIndex,
                 state?.bestTimesByLevelId,
                 state?.attemptsByLevelId,
+                state?.playerName,
             )
+
+        case 'LOAD_PLAYER_PROFILE':
+            return createInitialGameSession(action.playerName)
 
         default:
             return state
@@ -327,6 +455,7 @@ export function selectGameSession(state) {
     const targetColor = engine.getTargetColor?.(currentTarget) ?? '#ffffff'
 
     return {
+        playerName: state.playerName,
         levels: LEVELS,
         level,
         levelIndex: state.levelIndex,
