@@ -45,6 +45,10 @@
     gap: 12px;
 }
 
+.level-summary-card.world-summary .level-summary-header {
+    justify-content: flex-start;
+}
+
 .level-summary-title-row {
     display: flex;
     align-items: center;
@@ -52,7 +56,7 @@
     text-align: left;
 }
 
-.level-summary-card.world-summary .level-summary-title-row {
+.level-summary-title-row.no-icon {
     display: block;
 }
 
@@ -66,6 +70,25 @@
     background: rgba(255, 255, 255, 0.12);
     box-shadow: 0 0 18px rgba(255, 255, 255, 0.12);
     flex: 0 0 auto;
+}
+
+.level-summary-icon.image {
+    width: 58px;
+    height: 58px;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 16px;
+    background: transparent;
+    box-shadow: none;
+    border: 0;
+}
+
+.level-summary-icon-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 16px;
 }
 
 .level-summary-title {
@@ -197,6 +220,11 @@
     .level-summary-card.world-summary {
         width: min(540px, calc(100% - 20px));
     }
+
+    .level-summary-icon.image {
+        width: 56px;
+        height: 56px;
+    }
 }
 
 @media (max-width: 640px) {
@@ -219,5 +247,16 @@
 
     .level-summary-action {
         width: 100%;
+    }
+}
+
+@media (max-width: 560px) {
+    .level-summary-icon.image {
+        width: 52px;
+        height: 52px;
+    }
+
+    .level-summary-icon-image {
+        border-radius: 14px;
     }
 }

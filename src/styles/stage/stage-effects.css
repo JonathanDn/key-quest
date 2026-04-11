@@ -94,22 +94,6 @@
     pointer-events: auto;
 }
 
-.world-complete-ring {
-    pointer-events: none;
-}
-
-.world-complete-ring {
-    position: absolute;
-    width: min(340px, 72vw);
-    aspect-ratio: 1;
-    border-radius: 50%;
-    border: 5px solid rgba(255, 255, 255, 0.9);
-    box-shadow:
-            0 0 40px rgba(255, 255, 255, 0.34),
-            inset 0 0 32px rgba(255, 255, 255, 0.12);
-    animation: world-portal-open 0.62s ease forwards;
-}
-
 @keyframes target-success-pop {
     0% {
         transform: scale(0.94);
@@ -346,7 +330,7 @@
         filter: brightness(1);
     }
     100% {
-        opacity: 0.22;
+        opacity: 1;
         transform: scale(0.94);
         filter: brightness(0.9);
     }
@@ -472,10 +456,6 @@
 }
 
 @media (max-width: 900px) {
-    .world-complete-ring {
-        width: min(300px, 80vw);
-    }
-
     .level-complete-banner {
         width: min(92vw, 420px);
     }

@@ -42,7 +42,7 @@ function buildTargetView(currentTarget, pressedKeys, complete) {
     if (!currentTarget) {
         return {
             mode: complete ? 'complete' : 'idle',
-            label: complete ? '🎉' : '▶',
+            label: complete ? '' : '▶',
             isWide: false,
             comboChips: [],
             stepDoneText: '',

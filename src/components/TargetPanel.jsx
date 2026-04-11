@@ -1,4 +1,10 @@
+// src/components/TargetPanel.jsx
 import React from 'react'
+
+const LEVEL_COMPLETED_IMAGE_SRC = '/level-completed.png'
+const WORLD_COMPLETED_IMAGE_SRC = '/world-completed.png'
+const LEVEL_SUMMARY_ICON_SRC = '/level-summary-icon.png'
+const WORLD_SUMMARY_ICON_SRC = '/world-summary-icon.png'
 
 function formatElapsedTime(elapsedTimeMs) {
     return `${(Math.max(elapsedTimeMs, 0) / 1000).toFixed(1)}s`
@@ -16,15 +22,39 @@ function renderWordChips(text) {
     ))
 }
 
+function CompletionImage({ className, src }) {
+    return (
+        <img
+            src={src}
+            alt=""
+            className={className}
+            draggable="false"
+            aria-hidden="true"
+        />
+    )
+}
+
+function SummaryIconImage({ src }) {
+    return (
+        <img
+            src={src}
+            alt=""
+            className="level-summary-icon-image"
+            draggable="false"
+            aria-hidden="true"
+        />
+    )
+}
+
 function LevelSummaryCard({
                               levelSummary,
-                              variant = 'level',
                               compact = false,
+                              isWorldSummary = false,
+                              gameFinished = false,
+                              unlockedWorldMeta,
                               actionLabel = '',
                               actionButtonClassName = 'soft-button',
                               onAction,
-                              unlockedWorldMeta,
-                              gameFinished = false,
                           }) {
     if (!levelSummary) {
         return null
@@ -33,15 +63,20 @@ function LevelSummaryCard({
     const { currentRunTimeMs, bestTimeMs, sessionAttemptTimes, isNewBestTime } = levelSummary
     const visibleAttempts = sessionAttemptTimes.slice(-5)
     const firstVisibleIndex = sessionAttemptTimes.length - visibleAttempts.length
-    const isWorldSummary = variant === 'world'
 
     const title = isWorldSummary
         ? (gameFinished ? 'Key Quest Complete!' : 'World Complete!')
         : 'Level Clear!'
 
     const subtitle = isWorldSummary
-        ? (gameFinished ? 'You finished every world.' : `You unlocked ${unlockedWorldMeta?.title}.`)
+        ? (gameFinished
+            ? 'You finished every world.'
+            : `You unlocked ${unlockedWorldMeta?.title}.`)
         : 'See this run before you move on.'
+
+    const summaryIconSrc = isWorldSummary
+        ? WORLD_SUMMARY_ICON_SRC
+        : LEVEL_SUMMARY_ICON_SRC
 
     return (
         <div
@@ -53,9 +88,9 @@ function LevelSummaryCard({
         >
             <div className="level-summary-header">
                 <div className="level-summary-title-row">
-                    {!isWorldSummary ? (
-                        <div className="level-summary-icon">🏅</div>
-                    ) : null}
+                    <div className="level-summary-icon image">
+                        <SummaryIconImage src={summaryIconSrc} />
+                    </div>
 
                     <div>
                         <div className="level-summary-title">{title}</div>
@@ -142,6 +177,10 @@ export function TargetPanel({
                                 summaryActionButtonClassName,
                                 onSummaryAction,
                             }) {
+    const completeImageSrc = worldCompleteFx.active
+        ? WORLD_COMPLETED_IMAGE_SRC
+        : LEVEL_COMPLETED_IMAGE_SRC
+
     return (
         <div
             className={[
@@ -235,6 +274,7 @@ export function TargetPanel({
                             ui.target.isWide ? 'wide' : '',
                             ui.target.mode === 'combo' ? 'combo' : '',
                             ui.target.mode === 'textStep' ? 'text-step' : '',
+                            ui.target.mode === 'complete' ? 'complete' : '',
                         ].join(' ')}
                         style={{ '--target-color': targetColor }}
                     >
@@ -255,6 +295,11 @@ export function TargetPanel({
                                 <span className="word-current">{ui.target.stepCurrentChar}</span>
                                 <span className="word-upcoming">{ui.target.stepUpcomingText}</span>
                             </div>
+                        ) : ui.target.mode === 'complete' ? (
+                            <CompletionImage
+                                className="big-target-complete-image"
+                                src={completeImageSrc}
+                            />
                         ) : (
                             ui.target.label
                         )}
@@ -265,7 +310,7 @@ export function TargetPanel({
             {showLevelSummary ? (
                 <LevelSummaryCard
                     levelSummary={levelSummary}
-                    variant="level"
+                    isWorldSummary={false}
                     actionLabel={summaryActionLabel}
                     actionButtonClassName={summaryActionButtonClassName}
                     onAction={onSummaryAction}
@@ -274,17 +319,14 @@ export function TargetPanel({
 
             {showPortalCard ? (
                 <div className="world-portal-card">
-                    <div className="world-complete-ring" aria-hidden="true" />
-
                     <LevelSummaryCard
                         levelSummary={levelSummary}
-                        variant="world"
-                        compact
+                        isWorldSummary
+                        gameFinished={gameFinished}
+                        unlockedWorldMeta={unlockedWorldMeta}
                         actionLabel={summaryActionLabel}
                         actionButtonClassName={summaryActionButtonClassName}
                         onAction={onSummaryAction}
-                        unlockedWorldMeta={unlockedWorldMeta}
-                        gameFinished={gameFinished}
                     />
                 </div>
             ) : null}

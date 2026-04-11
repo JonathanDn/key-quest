@@ -248,13 +248,13 @@ export function useStageEffects({
 
         const burstTimer = window.setTimeout(() => {
             setWorldCompleteFx({ active: true, phase: 'travel' })
+            setShowPortalCard(true)
             spawnWorldTravelStars()
-        }, 220)
+        }, 180)
 
         const portalTimer = window.setTimeout(() => {
             setWorldCompleteFx({ active: true, phase: 'portal' })
             setWorldTravelStars([])
-            setShowPortalCard(true)
         }, 920)
 
         const readyTimer = window.setTimeout(() => {

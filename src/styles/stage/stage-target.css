@@ -152,18 +152,18 @@
     transition: filter 0.3s ease;
 }
 
-.world-phase-burst .big-target,
+.world-phase-burst .big-target:not(.complete),
 .world-phase-burst .word-power-stage {
     animation: world-final-hit 0.28s ease;
 }
 
-.world-phase-travel .big-target,
+.world-phase-travel .big-target:not(.complete),
 .world-phase-travel .word-power-stage {
     animation: world-target-settle 0.5s ease forwards;
 }
 
-.world-phase-portal .big-target,
-.world-phase-ready .big-target,
+.world-phase-portal .big-target:not(.complete),
+.world-phase-ready .big-target:not(.complete),
 .world-phase-portal .word-power-stage,
 .world-phase-ready .word-power-stage {
     opacity: 0.14;
@@ -173,6 +173,17 @@
             opacity 0.35s ease,
             transform 0.35s ease,
             filter 0.35s ease;
+}
+
+.world-phase-burst .big-target.complete,
+.world-phase-travel .big-target.complete,
+.world-phase-portal .big-target.complete,
+.world-phase-ready .big-target.complete {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    animation: none;
+    transition: none;
 }
 
 .big-target {
@@ -216,6 +227,33 @@
 
 .big-target.text-step {
     padding: 26px 30px;
+}
+
+.big-target.complete {
+    width: var(--target-size);
+    max-width: 100%;
+    aspect-ratio: 1;
+    min-height: 0;
+    padding: 18px;
+    background:
+            radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.06)),
+            var(--color-glass);
+    border: 5px solid rgba(255, 255, 255, 0.14);
+    box-shadow:
+            0 0 30px rgba(255, 255, 255, 0.12),
+            inset 0 0 24px rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+
+.big-target-complete-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 24px;
+    user-select: none;
+    pointer-events: none;
+    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.22));
 }
 
 .word-target {
@@ -293,6 +331,10 @@
         padding: 20px 24px;
     }
 
+    .big-target.complete {
+        padding: 16px;
+    }
+
     .word-target {
         font-size: clamp(1.5rem, 5vw, 3rem);
     }
@@ -327,6 +369,14 @@
         height: min(100%, var(--target-min-height-space-mobile));
         font-size: clamp(1.8rem, 6vw, 3.2rem);
         padding: 16px 18px;
+    }
+
+    .big-target.complete {
+        padding: 12px;
+    }
+
+    .big-target-complete-image {
+        border-radius: 18px;
     }
 
     .word-target {
