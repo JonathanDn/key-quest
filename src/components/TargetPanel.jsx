@@ -1,5 +1,9 @@
 import React from 'react'
 
+function formatElapsedTime(elapsedTimeMs) {
+    return `${(Math.max(elapsedTimeMs, 0) / 1000).toFixed(1)}s`
+}
+
 function renderWordChips(text) {
     if (!text) {
         return <span className="word-slot-placeholder">Empty</span>
@@ -7,9 +11,71 @@ function renderWordChips(text) {
 
     return text.split(' ').map((part, index) => (
         <span className="word-chip" key={`${part}-${index}`}>
-      {part}
-    </span>
+            {part}
+        </span>
     ))
+}
+
+function LevelSummaryCard({ levelSummary, compact = false }) {
+    if (!levelSummary) {
+        return null
+    }
+
+    const { currentRunTimeMs, bestTimeMs, sessionAttemptTimes, isNewBestTime } = levelSummary
+    const visibleAttempts = sessionAttemptTimes.slice(-5)
+    const firstVisibleIndex = sessionAttemptTimes.length - visibleAttempts.length
+
+    return (
+        <div className={['level-summary-card', compact ? 'compact' : ''].join(' ')} aria-hidden="true">
+            <div className="level-summary-header">
+                <div className="level-summary-title-row">
+                    <div className="level-summary-icon">🏅</div>
+                    <div>
+                        <div className="level-summary-title">Level Clear!</div>
+                        <div className="level-summary-subtitle">See this run before you move on.</div>
+                    </div>
+                </div>
+
+                {isNewBestTime ? <div className="level-summary-best-badge">✨ New best!</div> : null}
+            </div>
+
+            <div className="level-summary-stats">
+                <div className="level-summary-stat">
+                    <span className="level-summary-label">This run</span>
+                    <span className="level-summary-value">{formatElapsedTime(currentRunTimeMs)}</span>
+                </div>
+
+                <div className="level-summary-stat">
+                    <span className="level-summary-label">Best</span>
+                    <span className="level-summary-value">{formatElapsedTime(bestTimeMs ?? currentRunTimeMs)}</span>
+                </div>
+            </div>
+
+            <div className="level-summary-attempts">
+                <div className="level-summary-attempts-label">This session</div>
+                <div className="level-summary-attempt-chips">
+                    {visibleAttempts.map((timeMs, index) => {
+                        const actualIndex = firstVisibleIndex + index
+                        const isLatest = actualIndex === sessionAttemptTimes.length - 1
+                        const isBest = typeof bestTimeMs === 'number' && timeMs === bestTimeMs
+
+                        return (
+                            <span
+                                key={`${timeMs}-${actualIndex}`}
+                                className={[
+                                    'level-summary-attempt-chip',
+                                    isLatest ? 'latest' : '',
+                                    isBest ? 'best' : '',
+                                ].join(' ')}
+                            >
+                                {formatElapsedTime(timeMs)}
+                            </span>
+                        )
+                    })}
+                </div>
+            </div>
+        </div>
+    )
 }
 
 export function TargetPanel({
@@ -24,10 +90,11 @@ export function TargetPanel({
                                 targetBurst,
                                 levelCompleteFx,
                                 worldCompleteFx,
-                                showLevelBanner,
+                                showLevelSummary,
                                 showPortalCard,
                                 gameFinished,
                                 unlockedWorldMeta,
+                                levelSummary,
                             }) {
     return (
         <div
@@ -131,8 +198,8 @@ export function TargetPanel({
                                     <React.Fragment key={chip.code}>
                                         {index > 0 ? <span className="combo-plus">+</span> : null}
                                         <span className={chip.held ? 'combo-chip held' : 'combo-chip'}>
-                      {chip.label}
-                    </span>
+                                            {chip.label}
+                                        </span>
                                     </React.Fragment>
                                 ))}
                             </div>
@@ -149,15 +216,7 @@ export function TargetPanel({
                 )}
             </div>
 
-            {showLevelBanner ? (
-                <div className="level-complete-banner" aria-hidden="true">
-                    <div className="level-complete-badge">🏅</div>
-                    <div className="level-complete-copy">
-                        <div className="level-complete-title">Level Clear!</div>
-                        <div className="level-complete-subtitle">Great job. Ready for the next one?</div>
-                    </div>
-                </div>
-            ) : null}
+            {showLevelSummary ? <LevelSummaryCard levelSummary={levelSummary} /> : null}
 
             {showPortalCard ? (
                 <div className="world-portal-card" aria-hidden="true">
@@ -175,13 +234,15 @@ export function TargetPanel({
                     </div>
 
                     <div className="world-complete-next-badge">
-            <span className="world-complete-next-icon">
-              {gameFinished ? '🏆' : unlockedWorldMeta?.icon}
-            </span>
+                        <span className="world-complete-next-icon">
+                            {gameFinished ? '🏆' : unlockedWorldMeta?.icon}
+                        </span>
                         <span>
-              {gameFinished ? 'All worlds cleared' : unlockedWorldMeta?.title}
-            </span>
+                            {gameFinished ? 'All worlds cleared' : unlockedWorldMeta?.title}
+                        </span>
                     </div>
+
+                    <LevelSummaryCard levelSummary={levelSummary} compact />
                 </div>
             ) : null}
         </div>

@@ -16,6 +16,8 @@ function App() {
     pressedCode,
     elapsedTimeMs,
     bestTimeMs,
+    sessionAttemptTimes,
+    isNewBestTime,
     message,
     playing,
     complete,
@@ -53,17 +55,12 @@ function App() {
   const effects = useStageEffects({
     ui,
     successFx,
-    playing,
     complete,
     level,
     levelIndex,
     currentWorld: progression.currentWorld,
-    hasNextLevel: progression.hasNextLevel,
     isWorldBoundary: progression.isWorldBoundary,
     isStandardLevelComplete: progression.isStandardLevelComplete,
-    gameFinished: progression.gameFinished,
-    goToLevel,
-    goToNextLevel,
     targetAreaRef,
     targetVisualRef,
     starCounterRef,
@@ -77,6 +74,14 @@ function App() {
       progression.hasNextLevel && progression.isWorldBoundary && effects.showWorldCta
   const showPlayAgainButton = progression.gameFinished && effects.showWorldCta
   const queueDimmed = effects.levelCompleteFx.active || effects.worldCompleteFx.active
+  const levelSummary = complete
+      ? {
+        currentRunTimeMs: elapsedTimeMs,
+        bestTimeMs,
+        sessionAttemptTimes,
+        isNewBestTime,
+      }
+      : null
 
   return (
       <div className="game-shell">
@@ -117,10 +122,11 @@ function App() {
                 targetBurst={effects.targetBurst}
                 levelCompleteFx={effects.levelCompleteFx}
                 worldCompleteFx={effects.worldCompleteFx}
-                showLevelBanner={effects.showLevelBanner}
+                showLevelSummary={effects.showLevelSummary}
                 showPortalCard={effects.showPortalCard}
                 gameFinished={progression.gameFinished}
                 unlockedWorldMeta={progression.unlockedWorldMeta}
+                levelSummary={levelSummary}
             />
 
             <QueueRow queue={ui.queue} dimmed={queueDimmed} />
@@ -129,8 +135,6 @@ function App() {
                 showNextButton={showNextButton}
                 showWorldNextButton={showWorldNextButton}
                 showPlayAgainButton={showPlayAgainButton}
-                nextCountdown={effects.nextCountdown}
-                worldCountdown={effects.worldCountdown}
                 unlockedWorldMeta={progression.unlockedWorldMeta}
                 goToNextLevel={goToNextLevel}
                 goToLevel={goToLevel}

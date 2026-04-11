@@ -3,6 +3,7 @@ import { getLessonEngine } from '../engine/lessonEngine'
 import { buildStageView } from '../ui/viewModel'
 
 const HAPPY_MESSAGES = ['Nice!', 'Yay!', 'Great!', 'Awesome!', 'You got it!']
+const BEST_TIMES_STORAGE_KEY = 'key-quest-best-times-v1'
 
 const EMPTY_STAGE_STATE = {
     taskLabel: '',
@@ -17,6 +18,51 @@ function randomPick(list) {
 
 function formatElapsedTime(elapsedTimeMs) {
     return `${(Math.max(elapsedTimeMs, 0) / 1000).toFixed(1)}s`
+}
+
+function loadBestTimesFromStorage() {
+    if (typeof window === 'undefined') {
+        return {}
+    }
+
+    try {
+        const raw = window.localStorage.getItem(BEST_TIMES_STORAGE_KEY)
+
+        if (!raw) {
+            return {}
+        }
+
+        const parsed = JSON.parse(raw)
+
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+            return {}
+        }
+
+        return Object.fromEntries(
+            Object.entries(parsed).filter(([, value]) => (
+                typeof value === 'number' &&
+                Number.isFinite(value) &&
+                value >= 0
+            )),
+        )
+    } catch {
+        return {}
+    }
+}
+
+export function saveBestTimesToStorage(bestTimesByLevelId) {
+    if (typeof window === 'undefined') {
+        return
+    }
+
+    try {
+        window.localStorage.setItem(
+            BEST_TIMES_STORAGE_KEY,
+            JSON.stringify(bestTimesByLevelId),
+        )
+    } catch {
+        // Ignore storage failures so gameplay never breaks.
+    }
 }
 
 function getLevel(levelIndex) {
@@ -51,7 +97,7 @@ function getElapsedTimeMs(state, now = Date.now()) {
     return Math.max(state.elapsedTimeMs, now - state.timerStartedAt)
 }
 
-function buildLevelSession(levelIndex, bestTimesByLevelId = {}) {
+function buildLevelSession(levelIndex, bestTimesByLevelId = {}, attemptsByLevelId = {}) {
     const level = getLevel(levelIndex)
     const engine = getEngine(level)
     const round = engine.createRound(level)
@@ -76,6 +122,8 @@ function buildLevelSession(levelIndex, bestTimesByLevelId = {}) {
         timerStartedAt: null,
         elapsedTimeMs: 0,
         bestTimesByLevelId,
+        attemptsByLevelId,
+        isNewBestTime: false,
     }
 }
 
@@ -129,20 +177,27 @@ function handleKeyDown(state, normalizedCode, praise) {
             : state.elapsedTimeMs
 
         const previousBestTimeMs = state.bestTimesByLevelId[level.id]
-        const nextBestTimeMs =
+        const sessionAttemptTimes = isComplete
+            ? [...(state.attemptsByLevelId[level.id] ?? []), elapsedTimeMs]
+            : (state.attemptsByLevelId[level.id] ?? [])
+        const isNewBestTime = Boolean(
             isComplete && (
                 typeof previousBestTimeMs !== 'number' ||
                 elapsedTimeMs < previousBestTimeMs
-            )
-                ? elapsedTimeMs
-                : previousBestTimeMs
+            ),
+        )
+        const nextBestTimeMs = isNewBestTime
+            ? elapsedTimeMs
+            : previousBestTimeMs
 
         return {
             ...nextState,
             currentIndex: nextIndex,
             stars: state.stars + 1,
             message: isComplete
-                ? `You did it in ${formatElapsedTime(elapsedTimeMs)}!`
+                ? (isNewBestTime
+                    ? `New best! ${formatElapsedTime(elapsedTimeMs)}`
+                    : `You did it in ${formatElapsedTime(elapsedTimeMs)}!`)
                 : (engine.getGuidance?.(nextTarget) ?? ''),
             playing: !isComplete,
             complete: isComplete,
@@ -162,6 +217,13 @@ function handleKeyDown(state, normalizedCode, praise) {
                     [level.id]: nextBestTimeMs,
                 }
                 : state.bestTimesByLevelId,
+            attemptsByLevelId: isComplete
+                ? {
+                    ...state.attemptsByLevelId,
+                    [level.id]: sessionAttemptTimes,
+                }
+                : state.attemptsByLevelId,
+            isNewBestTime,
         }
     }
 
@@ -216,7 +278,11 @@ export function normalizeKeyCode(code) {
 }
 
 export function createInitialGameSession() {
-    return buildLevelSession(INITIAL_LEVEL_INDEX)
+    return buildLevelSession(
+        INITIAL_LEVEL_INDEX,
+        loadBestTimesFromStorage(),
+        {},
+    )
 }
 
 export function gameSessionReducer(state, action) {
@@ -231,7 +297,11 @@ export function gameSessionReducer(state, action) {
             return handleTick(state, action.now)
 
         case 'GO_TO_LEVEL':
-            return buildLevelSession(action.levelIndex, state?.bestTimesByLevelId)
+            return buildLevelSession(
+                action.levelIndex,
+                state?.bestTimesByLevelId,
+                state?.attemptsByLevelId,
+            )
 
         default:
             return state
@@ -268,6 +338,8 @@ export function selectGameSession(state) {
         complete: state.complete,
         elapsedTimeMs: getElapsedTimeMs(state),
         bestTimeMs: state.bestTimesByLevelId[level.id] ?? null,
+        sessionAttemptTimes: state.attemptsByLevelId[level.id] ?? [],
+        isNewBestTime: state.isNewBestTime,
         targetColor,
         ui: buildStageView({
             level,

@@ -4,8 +4,6 @@ export function ActionRow({
                               showNextButton,
                               showWorldNextButton,
                               showPlayAgainButton,
-                              nextCountdown,
-                              worldCountdown,
                               unlockedWorldMeta,
                               goToNextLevel,
                               goToLevel,
@@ -14,14 +12,13 @@ export function ActionRow({
         <div className="action-row">
             {showNextButton ? (
                 <button className="soft-button" onClick={goToNextLevel}>
-                    Next now{nextCountdown !== null ? ` (${nextCountdown})` : ''}
+                    Next level
                 </button>
             ) : null}
 
             {showWorldNextButton ? (
                 <button className="big-button world-enter-button" onClick={goToNextLevel}>
                     Enter {unlockedWorldMeta?.title}
-                    {worldCountdown !== null ? ` (${worldCountdown})` : ''}
                 </button>
             ) : null}
 

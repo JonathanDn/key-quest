@@ -3,25 +3,18 @@ import { useEffect, useRef, useState } from 'react'
 export function useStageEffects({
                                     ui,
                                     successFx,
-                                    playing,
                                     complete,
                                     level,
                                     levelIndex,
                                     currentWorld,
-                                    hasNextLevel,
                                     isWorldBoundary,
                                     isStandardLevelComplete,
-                                    gameFinished,
-                                    goToLevel,
-                                    goToNextLevel,
                                     targetAreaRef,
                                     targetVisualRef,
                                     starCounterRef,
                                     worldBadgeRefs,
                                     levelNodeRefs,
                                 }) {
-    const [nextCountdown, setNextCountdown] = useState(null)
-    const [worldCountdown, setWorldCountdown] = useState(null)
     const [clipboardBurst, setClipboardBurst] = useState(false)
     const [targetBurst, setTargetBurst] = useState(false)
     const [showSuccessBurst, setShowSuccessBurst] = useState(false)
@@ -30,7 +23,7 @@ export function useStageEffects({
     const [starPulse, setStarPulse] = useState(false)
     const [levelCompleteFx, setLevelCompleteFx] = useState({ active: false, phase: 'idle' })
     const [levelTravelStars, setLevelTravelStars] = useState([])
-    const [showLevelBanner, setShowLevelBanner] = useState(false)
+    const [showLevelSummary, setShowLevelSummary] = useState(false)
     const [worldCompleteFx, setWorldCompleteFx] = useState({ active: false, phase: 'idle' })
     const [worldTravelStars, setWorldTravelStars] = useState([])
     const [showPortalCard, setShowPortalCard] = useState(false)
@@ -211,13 +204,11 @@ export function useStageEffects({
 
         setLevelCompleteFx({ active: false, phase: 'idle' })
         setLevelTravelStars([])
-        setShowLevelBanner(false)
+        setShowLevelSummary(false)
         setWorldCompleteFx({ active: false, phase: 'idle' })
         setWorldTravelStars([])
         setShowPortalCard(false)
         setShowWorldCta(false)
-        setNextCountdown(null)
-        setWorldCountdown(null)
     }, [complete, levelIndex])
 
     useEffect(() => {
@@ -227,11 +218,11 @@ export function useStageEffects({
 
         setLevelCompleteFx({ active: true, phase: 'burst' })
         setLevelTravelStars([])
-        setShowLevelBanner(false)
+        setShowLevelSummary(false)
 
         const trailTimer = window.setTimeout(() => {
             setLevelCompleteFx({ active: true, phase: 'trail' })
-            setShowLevelBanner(true)
+            setShowLevelSummary(true)
             spawnLevelTravelStars()
         }, 180)
 
@@ -278,100 +269,7 @@ export function useStageEffects({
         }
     }, [isWorldBoundary, currentWorld, levelIndex])
 
-    useEffect(() => {
-        if (!complete || !hasNextLevel || isWorldBoundary) {
-            setNextCountdown(null)
-            return
-        }
-
-        setNextCountdown(5)
-
-        const timeoutId = window.setTimeout(() => {
-            goToNextLevel()
-        }, 5000)
-
-        const intervalId = window.setInterval(() => {
-            setNextCountdown((value) => {
-                if (value === null) {
-                    return null
-                }
-
-                return value > 1 ? value - 1 : 1
-            })
-        }, 1000)
-
-        return () => {
-            window.clearTimeout(timeoutId)
-            window.clearInterval(intervalId)
-        }
-    }, [complete, hasNextLevel, isWorldBoundary, goToNextLevel])
-
-    useEffect(() => {
-        if (!showWorldCta || !hasNextLevel || !isWorldBoundary) {
-            setWorldCountdown(null)
-            return
-        }
-
-        setWorldCountdown(4)
-
-        const timeoutId = window.setTimeout(() => {
-            goToNextLevel()
-        }, 4000)
-
-        const intervalId = window.setInterval(() => {
-            setWorldCountdown((value) => {
-                if (value === null) {
-                    return null
-                }
-
-                return value > 1 ? value - 1 : 1
-            })
-        }, 1000)
-
-        return () => {
-            window.clearTimeout(timeoutId)
-            window.clearInterval(intervalId)
-        }
-    }, [showWorldCta, hasNextLevel, isWorldBoundary, goToNextLevel])
-
-    const showNextButton = complete && hasNextLevel && !isWorldBoundary
-    const showWorldNextButton = hasNextLevel && isWorldBoundary && showWorldCta
-    const showPlayAgainButton = gameFinished && showWorldCta
-
-    useEffect(() => {
-        const canUseEnter = showNextButton || showWorldNextButton || showPlayAgainButton
-
-        if (!canUseEnter) {
-            return
-        }
-
-        function onKeyDown(event) {
-            if (event.code !== 'Enter' && event.code !== 'NumpadEnter') {
-                return
-            }
-
-            event.preventDefault()
-
-            if (showNextButton || showWorldNextButton) {
-                goToNextLevel()
-                return
-            }
-
-            if (showPlayAgainButton) {
-                goToLevel(0)
-            }
-        }
-
-        window.addEventListener('keydown', onKeyDown)
-
-        return () => {
-            window.removeEventListener('keydown', onKeyDown)
-        }
-    }, [showNextButton, showWorldNextButton, showPlayAgainButton, goToNextLevel, goToLevel])
-
     return {
-        nextCountdown,
-        worldCountdown,
         clipboardBurst,
         targetBurst,
         showSuccessBurst,
@@ -380,7 +278,7 @@ export function useStageEffects({
         starPulse,
         levelCompleteFx,
         levelTravelStars,
-        showLevelBanner,
+        showLevelSummary,
         worldCompleteFx,
         worldTravelStars,
         showPortalCard,

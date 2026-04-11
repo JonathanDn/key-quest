@@ -4,6 +4,7 @@ import {
     createInitialGameSession,
     gameSessionReducer,
     normalizeKeyCode,
+    saveBestTimesToStorage,
     selectGameSession,
     shouldPreventDefaultForSession,
 } from '../game/session/gameSession'
@@ -30,9 +31,31 @@ export function useTypingGame() {
     const game = useMemo(() => selectGameSession(session), [session])
 
     useEffect(() => {
+        saveBestTimesToStorage(session.bestTimesByLevelId)
+    }, [session.bestTimesByLevelId])
+
+    useEffect(() => {
         function onKeyDown(event) {
             const normalizedCode = normalizeKeyCode(event.code)
             const currentSession = sessionRef.current
+
+            if (normalizedCode === 'Enter' && currentSession.complete && !event.repeat) {
+                event.preventDefault()
+
+                if (currentSession.levelIndex < LEVELS.length - 1) {
+                    dispatch({
+                        type: 'GO_TO_LEVEL',
+                        levelIndex: currentSession.levelIndex + 1,
+                    })
+                } else {
+                    dispatch({
+                        type: 'GO_TO_LEVEL',
+                        levelIndex: 0,
+                    })
+                }
+
+                return
+            }
 
             if (shouldPreventDefaultForSession(currentSession, normalizedCode)) {
                 event.preventDefault()
@@ -90,6 +113,11 @@ export function useTypingGame() {
             dispatch({
                 type: 'GO_TO_LEVEL',
                 levelIndex: session.levelIndex + 1,
+            })
+        } else {
+            dispatch({
+                type: 'GO_TO_LEVEL',
+                levelIndex: 0,
             })
         }
     }, [session.levelIndex])
