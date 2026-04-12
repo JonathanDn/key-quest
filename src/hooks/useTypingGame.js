@@ -16,7 +16,7 @@ function randomPick(list) {
     return list[Math.floor(Math.random() * list.length)]
 }
 
-export function useTypingGame(playerName) {
+export function useTypingGame(playerName, inputPaused = false) {
     const normalizedPlayerName = useMemo(
         () => normalizePlayerName(playerName),
         [playerName],
@@ -29,10 +29,15 @@ export function useTypingGame(playerName) {
     )
 
     const sessionRef = useRef(session)
+    const inputPausedRef = useRef(inputPaused)
 
     useEffect(() => {
         sessionRef.current = session
     }, [session])
+
+    useEffect(() => {
+        inputPausedRef.current = inputPaused
+    }, [inputPaused])
 
     useEffect(() => {
         if (session.playerName === normalizedPlayerName) {
@@ -59,7 +64,7 @@ export function useTypingGame(playerName) {
         function onKeyDown(event) {
             const currentSession = sessionRef.current
 
-            if (!currentSession.playerName) {
+            if (!currentSession.playerName || inputPausedRef.current) {
                 return
             }
 
@@ -97,7 +102,7 @@ export function useTypingGame(playerName) {
         function onKeyUp(event) {
             const currentSession = sessionRef.current
 
-            if (!currentSession.playerName) {
+            if (!currentSession.playerName || inputPausedRef.current) {
                 return
             }
 

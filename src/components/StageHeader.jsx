@@ -1,6 +1,8 @@
 import React from 'react'
 import { WORLD_META } from '../game/content/worldMeta'
 
+const TROPHY_ICON_SRC = '/trophy.png'
+
 function formatElapsedTime(elapsedTimeMs) {
     return `${(Math.max(elapsedTimeMs, 0) / 1000).toFixed(1)}s`
 }
@@ -23,16 +25,39 @@ export function StageHeader({
                                 starCounterRef,
                                 worldBadgeRefs,
                                 levelNodeRefs,
+                                isLeaderboardOpen,
+                                onToggleLeaderboard,
                             }) {
     return (
         <div className="top-bar">
-            <div className="mini-pill top-bar-context-pill top-bar-context-stack">
-                {playerName ? (
-                    <span className="top-bar-context-player">{playerName}</span>
-                ) : null}
-                <span className="top-bar-context-level">
-                    {level.title} · {currentLevelInWorld}/{currentWorldLevels.length}
-                </span>
+            <div className="top-bar-left">
+                <button
+                    type="button"
+                    className={[
+                        'scoreboard-toggle',
+                        isLeaderboardOpen ? 'active' : '',
+                    ].join(' ')}
+                    aria-label={isLeaderboardOpen ? 'Close my leaderboard' : 'Open my leaderboard'}
+                    aria-pressed={isLeaderboardOpen}
+                    onClick={onToggleLeaderboard}
+                >
+                    <img
+                        src={TROPHY_ICON_SRC}
+                        alt=""
+                        className="scoreboard-toggle-icon"
+                        draggable="false"
+                        aria-hidden="true"
+                    />
+                </button>
+
+                <div className="mini-pill top-bar-context-pill top-bar-context-stack">
+                    {playerName ? (
+                        <span className="top-bar-context-player">{playerName}</span>
+                    ) : null}
+                    <span className="top-bar-context-level">
+                        {level.title} · {currentLevelInWorld}/{currentWorldLevels.length}
+                    </span>
+                </div>
             </div>
 
             <div className="progress-map">

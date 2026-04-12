@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useTypingGame } from './hooks/useTypingGame'
 import { useStageEffects } from './hooks/useStageEffects'
 import { StageHeader } from './components/StageHeader'
+import { LeaderboardModal } from './components/LeaderboardModal'
 import { TargetPanel } from './components/TargetPanel'
 import { QueueRow } from './components/QueueRow'
 import { KeyboardStage } from './components/KeyboardStage'
@@ -13,6 +14,8 @@ import {
 } from './game/session/gameSession'
 
 function GameExperience({ playerName }) {
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false)
+
   const {
     levels,
     level,
@@ -20,6 +23,7 @@ function GameExperience({ playerName }) {
     pressedCode,
     elapsedTimeMs,
     bestTimeMs,
+    bestTimesByLevelId,
     sessionAttemptTimes,
     isNewBestTime,
     message,
@@ -30,7 +34,7 @@ function GameExperience({ playerName }) {
     successFx,
     goToLevel,
     goToNextLevel,
-  } = useTypingGame(playerName)
+  } = useTypingGame(playerName, isLeaderboardOpen)
 
   const gameAreaRef = useRef(null)
   const targetAreaRef = useRef(null)
@@ -40,10 +44,28 @@ function GameExperience({ playerName }) {
   const levelNodeRefs = useRef({})
 
   useEffect(() => {
-    if (playing) {
+    if (playing && !isLeaderboardOpen) {
       gameAreaRef.current?.focus()
     }
-  }, [playing, levelIndex, ui.target.mode])
+  }, [playing, levelIndex, ui.target.mode, isLeaderboardOpen])
+
+  useEffect(() => {
+    if (!isLeaderboardOpen) {
+      return undefined
+    }
+
+    function onKeyDown(event) {
+      if (event.key === 'Escape') {
+        setIsLeaderboardOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [isLeaderboardOpen])
 
   const progression = useMemo(
       () =>
@@ -104,6 +126,10 @@ function GameExperience({ playerName }) {
       ? () => goToLevel(0)
       : goToNextLevel
 
+  function toggleLeaderboard() {
+    setIsLeaderboardOpen((currentValue) => !currentValue)
+  }
+
   return (
       <div className="game-shell">
         <div className="game-screen">
@@ -126,6 +152,16 @@ function GameExperience({ playerName }) {
                 starCounterRef={starCounterRef}
                 worldBadgeRefs={worldBadgeRefs}
                 levelNodeRefs={levelNodeRefs}
+                isLeaderboardOpen={isLeaderboardOpen}
+                onToggleLeaderboard={toggleLeaderboard}
+            />
+
+            <LeaderboardModal
+                isOpen={isLeaderboardOpen}
+                onClose={() => setIsLeaderboardOpen(false)}
+                playerName={playerName}
+                levels={levels}
+                bestTimesByLevelId={bestTimesByLevelId}
             />
 
             {!complete ? (

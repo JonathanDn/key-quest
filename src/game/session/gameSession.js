@@ -467,6 +467,7 @@ export function selectGameSession(state) {
         complete: state.complete,
         elapsedTimeMs: getElapsedTimeMs(state),
         bestTimeMs: state.bestTimesByLevelId[level.id] ?? null,
+        bestTimesByLevelId: state.bestTimesByLevelId,
         sessionAttemptTimes: state.attemptsByLevelId[level.id] ?? [],
         isNewBestTime: state.isNewBestTime,
         targetColor,
