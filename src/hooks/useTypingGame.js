@@ -5,7 +5,6 @@ import {
     gameSessionReducer,
     normalizeKeyCode,
     normalizePlayerName,
-    saveBestTimesToStorage,
     selectGameSession,
     shouldPreventDefaultForSession,
 } from '../game/session/gameSession'
@@ -16,20 +15,51 @@ function randomPick(list) {
     return list[Math.floor(Math.random() * list.length)]
 }
 
-export function useTypingGame(playerName, inputPaused = false) {
+function serializeBestTimes(bestTimesByLevelId) {
+    if (!bestTimesByLevelId || typeof bestTimesByLevelId !== 'object' || Array.isArray(bestTimesByLevelId)) {
+        return '{}'
+    }
+
+    return JSON.stringify(
+        Object.fromEntries(
+            Object.entries(bestTimesByLevelId).sort(([leftKey], [rightKey]) => (
+                leftKey.localeCompare(rightKey)
+            )),
+        ),
+    )
+}
+
+export function useTypingGame(
+    playerName,
+    inputPaused = false,
+    initialBestTimesByLevelId = {},
+) {
     const normalizedPlayerName = useMemo(
         () => normalizePlayerName(playerName),
         [playerName],
     )
 
+    const initialBestTimesSignature = useMemo(
+        () => serializeBestTimes(initialBestTimesByLevelId),
+        [initialBestTimesByLevelId],
+    )
+
     const [session, dispatch] = useReducer(
         gameSessionReducer,
-        normalizedPlayerName,
-        createInitialGameSession,
+        {
+            playerName: normalizedPlayerName,
+            initialBestTimesByLevelId,
+        },
+        ({ playerName: initialPlayerName, initialBestTimesByLevelId: initialBestTimes }) =>
+            createInitialGameSession(initialPlayerName, initialBestTimes),
     )
 
     const sessionRef = useRef(session)
     const inputPausedRef = useRef(inputPaused)
+    const lastLoadedProfileRef = useRef({
+        playerName: normalizedPlayerName,
+        bestTimesSignature: initialBestTimesSignature,
+    })
 
     useEffect(() => {
         sessionRef.current = session
@@ -40,25 +70,31 @@ export function useTypingGame(playerName, inputPaused = false) {
     }, [inputPaused])
 
     useEffect(() => {
-        if (session.playerName === normalizedPlayerName) {
+        const lastLoadedProfile = lastLoadedProfileRef.current
+        const playerChanged = lastLoadedProfile.playerName !== normalizedPlayerName
+        const bestTimesChanged = lastLoadedProfile.bestTimesSignature !== initialBestTimesSignature
+
+        if (!playerChanged && !bestTimesChanged) {
             return
+        }
+
+        lastLoadedProfileRef.current = {
+            playerName: normalizedPlayerName,
+            bestTimesSignature: initialBestTimesSignature,
         }
 
         dispatch({
             type: 'LOAD_PLAYER_PROFILE',
             playerName: normalizedPlayerName,
+            initialBestTimesByLevelId,
         })
-    }, [normalizedPlayerName, session.playerName])
+    }, [
+        normalizedPlayerName,
+        initialBestTimesByLevelId,
+        initialBestTimesSignature,
+    ])
 
     const game = useMemo(() => selectGameSession(session), [session])
-
-    useEffect(() => {
-        if (!session.playerName) {
-            return
-        }
-
-        saveBestTimesToStorage(session.playerName, session.bestTimesByLevelId)
-    }, [session.playerName, session.bestTimesByLevelId])
 
     useEffect(() => {
         function onKeyDown(event) {

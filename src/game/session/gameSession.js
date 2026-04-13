@@ -3,9 +3,6 @@ import { getLessonEngine } from '../engine/lessonEngine'
 import { buildStageView } from '../ui/viewModel'
 
 const HAPPY_MESSAGES = ['Nice!', 'Yay!', 'Great!', 'Awesome!', 'You got it!']
-const LEGACY_BEST_TIMES_STORAGE_KEY = 'key-quest-best-times-v1'
-const BEST_TIMES_BY_PLAYER_STORAGE_KEY = 'key-quest-best-times-by-player-v1'
-const LAST_PLAYER_NAME_STORAGE_KEY = 'key-quest-last-player-v1'
 
 const EMPTY_STAGE_STATE = {
     taskLabel: '',
@@ -42,147 +39,6 @@ function sanitizeBestTimesRecord(value) {
             entryValue >= 0
         )),
     )
-}
-
-function readStorageObject(storageKey) {
-    if (typeof window === 'undefined') {
-        return {}
-    }
-
-    try {
-        const raw = window.localStorage.getItem(storageKey)
-
-        if (!raw) {
-            return {}
-        }
-
-        const parsed = JSON.parse(raw)
-
-        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-            return {}
-        }
-
-        return parsed
-    } catch {
-        return {}
-    }
-}
-
-function loadAllBestTimesByPlayer() {
-    const rawPlayers = readStorageObject(BEST_TIMES_BY_PLAYER_STORAGE_KEY)
-
-    return Object.fromEntries(
-        Object.entries(rawPlayers)
-            .map(([playerName, bestTimes]) => [
-                normalizePlayerName(playerName),
-                sanitizeBestTimesRecord(bestTimes),
-            ])
-            .filter(([playerName]) => Boolean(playerName)),
-    )
-}
-
-function saveAllBestTimesByPlayer(bestTimesByPlayer) {
-    if (typeof window === 'undefined') {
-        return
-    }
-
-    try {
-        window.localStorage.setItem(
-            BEST_TIMES_BY_PLAYER_STORAGE_KEY,
-            JSON.stringify(bestTimesByPlayer),
-        )
-    } catch {
-        // Ignore storage failures so gameplay never breaks.
-    }
-}
-
-function maybeMigrateLegacyBestTimes(playerName, bestTimesByPlayer) {
-    if (!playerName || Object.keys(bestTimesByPlayer).length > 0 || typeof window === 'undefined') {
-        return bestTimesByPlayer
-    }
-
-    const legacyBestTimes = sanitizeBestTimesRecord(readStorageObject(LEGACY_BEST_TIMES_STORAGE_KEY))
-
-    if (!Object.keys(legacyBestTimes).length) {
-        return bestTimesByPlayer
-    }
-
-    const migratedBestTimesByPlayer = {
-        ...bestTimesByPlayer,
-        [playerName]: legacyBestTimes,
-    }
-
-    saveAllBestTimesByPlayer(migratedBestTimesByPlayer)
-
-    try {
-        window.localStorage.removeItem(LEGACY_BEST_TIMES_STORAGE_KEY)
-    } catch {
-        // Ignore storage failures so gameplay never breaks.
-    }
-
-    return migratedBestTimesByPlayer
-}
-
-export function loadLastPlayerNameFromStorage() {
-    if (typeof window === 'undefined') {
-        return ''
-    }
-
-    try {
-        return normalizePlayerName(
-            window.localStorage.getItem(LAST_PLAYER_NAME_STORAGE_KEY) ?? '',
-        )
-    } catch {
-        return ''
-    }
-}
-
-export function saveLastPlayerNameToStorage(playerName) {
-    if (typeof window === 'undefined') {
-        return
-    }
-
-    const normalizedPlayerName = normalizePlayerName(playerName)
-
-    if (!normalizedPlayerName) {
-        return
-    }
-
-    try {
-        window.localStorage.setItem(LAST_PLAYER_NAME_STORAGE_KEY, normalizedPlayerName)
-    } catch {
-        // Ignore storage failures so gameplay never breaks.
-    }
-}
-
-function loadBestTimesFromStorage(playerName) {
-    const normalizedPlayerName = normalizePlayerName(playerName)
-
-    if (!normalizedPlayerName) {
-        return {}
-    }
-
-    const bestTimesByPlayer = maybeMigrateLegacyBestTimes(
-        normalizedPlayerName,
-        loadAllBestTimesByPlayer(),
-    )
-
-    return sanitizeBestTimesRecord(bestTimesByPlayer[normalizedPlayerName])
-}
-
-export function saveBestTimesToStorage(playerName, bestTimesByLevelId) {
-    const normalizedPlayerName = normalizePlayerName(playerName)
-
-    if (!normalizedPlayerName) {
-        return
-    }
-
-    const bestTimesByPlayer = loadAllBestTimesByPlayer()
-
-    saveAllBestTimesByPlayer({
-        ...bestTimesByPlayer,
-        [normalizedPlayerName]: sanitizeBestTimesRecord(bestTimesByLevelId),
-    })
 }
 
 function getLevel(levelIndex) {
@@ -398,12 +254,16 @@ export function normalizeKeyCode(code) {
     return code === 'Space' ? 'Space' : code
 }
 
-export function createInitialGameSession(playerName = '') {
+export function createInitialGameSession(
+    playerName = '',
+    initialBestTimesByLevelId = {},
+) {
     const normalizedPlayerName = normalizePlayerName(playerName)
+    const bestTimesByLevelId = sanitizeBestTimesRecord(initialBestTimesByLevelId)
 
     return buildLevelSession(
         INITIAL_LEVEL_INDEX,
-        loadBestTimesFromStorage(normalizedPlayerName),
+        bestTimesByLevelId,
         {},
         normalizedPlayerName,
     )
@@ -429,7 +289,10 @@ export function gameSessionReducer(state, action) {
             )
 
         case 'LOAD_PLAYER_PROFILE':
-            return createInitialGameSession(action.playerName)
+            return createInitialGameSession(
+                action.playerName,
+                action.initialBestTimesByLevelId ?? {},
+            )
 
         default:
             return state

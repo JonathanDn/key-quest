@@ -1,20 +1,20 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useTypingGame } from './hooks/useTypingGame'
 import { useStageEffects } from './hooks/useStageEffects'
+import { useSupabaseAuth } from './hooks/useSupabaseAuth'
+import { getMyProfile, saveMyProfile } from './lib/profile'
+import { getMyBestTimes, saveMyBestTime } from './lib/remoteBestTimes'
 import { StageHeader } from './components/StageHeader'
 import { LeaderboardModal } from './components/LeaderboardModal'
 import { TargetPanel } from './components/TargetPanel'
 import { QueueRow } from './components/QueueRow'
 import { KeyboardStage } from './components/KeyboardStage'
 import { getProgressionState } from './game/selectors/progressionSelectors'
-import {
-  loadLastPlayerNameFromStorage,
-  normalizePlayerName,
-  saveLastPlayerNameToStorage,
-} from './game/session/gameSession'
+import { normalizePlayerName } from './game/session/gameSession'
 
-function GameExperience({ playerName }) {
+function GameExperience({ playerName, userId, cloudBestTimes }) {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false)
+  const syncedBestTimesRef = useRef(cloudBestTimes ?? {})
 
   const {
     levels,
@@ -34,7 +34,7 @@ function GameExperience({ playerName }) {
     successFx,
     goToLevel,
     goToNextLevel,
-  } = useTypingGame(playerName, isLeaderboardOpen)
+  } = useTypingGame(playerName, isLeaderboardOpen, cloudBestTimes)
 
   const gameAreaRef = useRef(null)
   const targetAreaRef = useRef(null)
@@ -42,6 +42,51 @@ function GameExperience({ playerName }) {
   const starCounterRef = useRef(null)
   const worldBadgeRefs = useRef({})
   const levelNodeRefs = useRef({})
+
+  useEffect(() => {
+    syncedBestTimesRef.current = cloudBestTimes ?? {}
+  }, [cloudBestTimes, playerName, userId])
+
+  useEffect(() => {
+    if (!userId) {
+      return
+    }
+
+    const lastSyncedBestTimes = syncedBestTimesRef.current ?? {}
+
+    const pendingEntries = Object.entries(bestTimesByLevelId ?? {}).filter(
+        ([levelId, nextBestTimeMs]) =>
+            typeof nextBestTimeMs === 'number' &&
+            (
+                typeof lastSyncedBestTimes[levelId] !== 'number' ||
+                nextBestTimeMs < lastSyncedBestTimes[levelId]
+            ),
+    )
+
+    if (!pendingEntries.length) {
+      return
+    }
+
+    const nextSyncedBestTimes = { ...lastSyncedBestTimes }
+
+    pendingEntries.forEach(([levelId, nextBestTimeMs]) => {
+      nextSyncedBestTimes[levelId] = nextBestTimeMs
+    })
+
+    syncedBestTimesRef.current = nextSyncedBestTimes
+
+    Promise.all(
+        pendingEntries.map(([levelId, nextBestTimeMs]) =>
+            saveMyBestTime({
+              userId,
+              levelId,
+              bestTimeMs: nextBestTimeMs,
+            }),
+        ),
+    ).catch((error) => {
+      console.error('Failed to sync best times to Supabase:', error)
+    })
+  }, [userId, bestTimesByLevelId])
 
   useEffect(() => {
     if (playing && !isLeaderboardOpen) {
@@ -260,67 +305,314 @@ function GameExperience({ playerName }) {
   )
 }
 
+function getSuggestedPlayerNameFromUser(user) {
+  const metadataName = normalizePlayerName(
+      user?.user_metadata?.display_name ??
+      user?.user_metadata?.name ??
+      '',
+  )
+
+  if (metadataName) {
+    return metadataName
+  }
+
+  const emailPrefix = (user?.email ?? '').split('@')[0] ?? ''
+  return normalizePlayerName(emailPrefix)
+}
+
 function App() {
-  const [draftPlayerName, setDraftPlayerName] = useState(() => loadLastPlayerNameFromStorage())
-  const [activePlayerName, setActivePlayerName] = useState(() => loadLastPlayerNameFromStorage())
+  const {
+    user,
+    loading: authLoading,
+    isSignedIn,
+    signUpWithPassword,
+    signInWithPassword,
+    signOut,
+  } = useSupabaseAuth()
+
+  const [draftPlayerName, setDraftPlayerName] = useState('')
+  const [activePlayerName, setActivePlayerName] = useState('')
+  const [cloudBestTimes, setCloudBestTimes] = useState({})
+  const [profileLoading, setProfileLoading] = useState(false)
+  const [profileError, setProfileError] = useState('')
   const [nameError, setNameError] = useState('')
 
-  function handleSubmit(event) {
+  const [authMode, setAuthMode] = useState('sign_in')
+  const [authEmail, setAuthEmail] = useState('')
+  const [authPassword, setAuthPassword] = useState('')
+  const [authError, setAuthError] = useState('')
+  const [authMessage, setAuthMessage] = useState('')
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadAccountData() {
+      if (!isSignedIn || !user?.id) {
+        setDraftPlayerName('')
+        setActivePlayerName('')
+        setCloudBestTimes({})
+        setProfileError('')
+        setProfileLoading(false)
+        return
+      }
+
+      setProfileLoading(true)
+      setProfileError('')
+
+      try {
+        const [profile, bestTimesByLevelId] = await Promise.all([
+          getMyProfile(user.id),
+          getMyBestTimes(user.id),
+        ])
+
+        if (!isMounted) {
+          return
+        }
+
+        const profileNickname = normalizePlayerName(profile?.nickname ?? '')
+        const suggestedPlayerName = getSuggestedPlayerNameFromUser(user)
+
+        setCloudBestTimes(bestTimesByLevelId ?? {})
+
+        if (profileNickname) {
+          setDraftPlayerName(profileNickname)
+          setActivePlayerName(profileNickname)
+        } else {
+          setDraftPlayerName(suggestedPlayerName)
+          setActivePlayerName('')
+        }
+
+        if (user.email) {
+          setAuthEmail(user.email)
+        }
+      } catch (error) {
+        if (!isMounted) {
+          return
+        }
+
+        setCloudBestTimes({})
+        setActivePlayerName('')
+        setProfileError(error?.message || 'Could not load your account data.')
+      } finally {
+        if (isMounted) {
+          setProfileLoading(false)
+        }
+      }
+    }
+
+    loadAccountData()
+
+    return () => {
+      isMounted = false
+    }
+  }, [isSignedIn, user])
+
+  async function handleSubmit(event) {
     event.preventDefault()
 
     const normalizedPlayerName = normalizePlayerName(draftPlayerName)
 
     if (!normalizedPlayerName) {
-      setNameError('Please type your name or nickname.')
+      setNameError('Please type your nickname before you play.')
       return
     }
 
-    saveLastPlayerNameToStorage(normalizedPlayerName)
-    setNameError('')
-    setActivePlayerName(normalizedPlayerName)
+    if (!user?.id) {
+      setNameError('You must be signed in first.')
+      return
+    }
+
+    try {
+      setNameError('')
+      setProfileError('')
+
+      const savedProfile = await saveMyProfile({
+        userId: user.id,
+        nickname: normalizedPlayerName,
+      })
+
+      const nextNickname = normalizePlayerName(savedProfile.nickname)
+
+      setDraftPlayerName(nextNickname)
+      setActivePlayerName(nextNickname)
+    } catch (error) {
+      setNameError(error?.message || 'Could not save your nickname.')
+    }
   }
 
-  if (!activePlayerName) {
+  async function handleAuthSubmit(event) {
+    event.preventDefault()
+
+    const normalizedEmail = authEmail.trim()
+
+    if (!normalizedEmail) {
+      setAuthError('Please type your email.')
+      setAuthMessage('')
+      return
+    }
+
+    if (!authPassword) {
+      setAuthError('Please type your password.')
+      setAuthMessage('')
+      return
+    }
+
+    try {
+      setAuthError('')
+      setAuthMessage('')
+
+      if (authMode === 'sign_in') {
+        await signInWithPassword(normalizedEmail, authPassword)
+      } else {
+        await signUpWithPassword(normalizedEmail, authPassword)
+        setAuthMessage('Account created. You are now signed in.')
+      }
+    } catch (error) {
+      setAuthMessage('')
+      setAuthError(error?.message || 'Could not complete authentication.')
+    }
+  }
+
+  async function handleSignOut() {
+    try {
+      await signOut()
+      setDraftPlayerName('')
+      setActivePlayerName('')
+      setCloudBestTimes({})
+      setProfileError('')
+      setAuthMessage('')
+      setAuthError('')
+      setNameError('')
+      setAuthPassword('')
+    } catch (error) {
+      setAuthError(error?.message || 'Could not sign out right now.')
+    }
+  }
+
+  if (activePlayerName) {
+    return (
+        <GameExperience
+            playerName={activePlayerName}
+            userId={user?.id ?? null}
+            cloudBestTimes={cloudBestTimes}
+        />
+    )
+  }
+
+  if (authLoading) {
     return (
         <div className="game-shell">
           <section className="launch-card" aria-labelledby="launch-title">
-            <div className="launch-card-badge">⭐ Score Keeper</div>
+            <div className="launch-card-badge account">☁️ Loading</div>
 
             <div className="launch-card-copy">
-              <h1 className="launch-card-title" id="launch-title">Who is playing today?</h1>
+              <h1 className="launch-card-title" id="launch-title">Checking your account…</h1>
               <p className="launch-card-text">
-                Type a name or nickname before the game starts.
+                One moment while Key Quest checks your sign-in.
+              </p>
+            </div>
+          </section>
+        </div>
+    )
+  }
+
+  if (!isSignedIn) {
+    return (
+        <div className="game-shell">
+          <section className="launch-card" aria-labelledby="launch-title">
+            <div className="launch-card-badge">☁️ Sign In</div>
+
+            <div className="launch-card-copy">
+              <h1 className="launch-card-title" id="launch-title">
+                {authMode === 'sign_in' ? 'Sign in and play' : 'Create your account'}
+              </h1>
+              <p className="launch-card-text">
+                {authMode === 'sign_in'
+                    ? 'Sign in with your email and password to enter Key Quest.'
+                    : 'Create an account with your email and password to enter Key Quest.'}
               </p>
               <p className="launch-card-subtext">
-                That name will match the best scores saved on this device.
+                After sign-in, you will choose your nickname if your account does not have one yet.
               </p>
             </div>
 
-            <form className="launch-form" onSubmit={handleSubmit}>
-              <label className="launch-label" htmlFor="player-name-input">
-                Name or nickname
+            <div className="launch-auth-mode-row">
+              <button
+                  type="button"
+                  className={[
+                    'launch-auth-mode-button',
+                    authMode === 'sign_in' ? 'active' : '',
+                  ].join(' ')}
+                  onClick={() => {
+                    setAuthMode('sign_in')
+                    setAuthError('')
+                    setAuthMessage('')
+                  }}
+              >
+                Sign in
+              </button>
+
+              <button
+                  type="button"
+                  className={[
+                    'launch-auth-mode-button',
+                    authMode === 'sign_up' ? 'active' : '',
+                  ].join(' ')}
+                  onClick={() => {
+                    setAuthMode('sign_up')
+                    setAuthError('')
+                    setAuthMessage('')
+                  }}
+              >
+                Create account
+              </button>
+            </div>
+
+            <form className="launch-auth-form" onSubmit={handleAuthSubmit}>
+              <label className="launch-label" htmlFor="auth-email-input">
+                Email
               </label>
 
               <input
-                  id="player-name-input"
+                  id="auth-email-input"
                   className="launch-input"
-                  type="text"
-                  value={draftPlayerName}
+                  type="email"
+                  value={authEmail}
                   onChange={(event) => {
-                    setDraftPlayerName(event.target.value)
-                    if (nameError) {
-                      setNameError('')
+                    setAuthEmail(event.target.value)
+                    if (authError) {
+                      setAuthError('')
                     }
                   }}
-                  placeholder="Type a name"
-                  maxLength={24}
+                  placeholder="you@example.com"
+                  autoComplete="email"
                   autoFocus
               />
 
-              {nameError ? <div className="launch-error">{nameError}</div> : null}
+              <label className="launch-label" htmlFor="auth-password-input">
+                Password
+              </label>
+
+              <input
+                  id="auth-password-input"
+                  className="launch-input"
+                  type="password"
+                  value={authPassword}
+                  onChange={(event) => {
+                    setAuthPassword(event.target.value)
+                    if (authError) {
+                      setAuthError('')
+                    }
+                  }}
+                  placeholder="Type your password"
+                  autoComplete={authMode === 'sign_in' ? 'current-password' : 'new-password'}
+              />
+
+              {authError ? <div className="launch-error">{authError}</div> : null}
+              {authMessage ? <div className="launch-success">{authMessage}</div> : null}
 
               <button className="big-button launch-button" type="submit">
-                Start game
+                {authMode === 'sign_in' ? 'Sign in' : 'Create account'}
               </button>
             </form>
           </section>
@@ -328,7 +620,86 @@ function App() {
     )
   }
 
-  return <GameExperience playerName={activePlayerName} />
+  if (profileLoading) {
+    return (
+        <div className="game-shell">
+          <section className="launch-card" aria-labelledby="launch-title">
+            <div className="launch-card-badge account">☁️ Account Ready</div>
+
+            <div className="launch-card-copy">
+              <h1 className="launch-card-title" id="launch-title">Loading your profile…</h1>
+              <p className="launch-card-text">
+                One moment while Key Quest checks your nickname and best scores.
+              </p>
+            </div>
+          </section>
+        </div>
+    )
+  }
+
+  return (
+      <div className="game-shell">
+        <section className="launch-card" aria-labelledby="launch-title">
+          <div className="launch-card-badge account">☁️ Account Ready</div>
+
+          <div className="launch-card-copy">
+            <h1 className="launch-card-title" id="launch-title">Pick your nickname</h1>
+            <p className="launch-card-text">
+              You are signed in. Choose the nickname you want to use in the game.
+            </p>
+            <p className="launch-card-subtext">
+              Returning signed-in players with a saved nickname will skip this screen automatically.
+            </p>
+          </div>
+
+          <div className="launch-status">
+            <div className="launch-status-row">
+              <div className="launch-status-copy">
+                <div className="launch-status-label">Signed in as</div>
+                <div className="launch-status-value">{user?.email}</div>
+              </div>
+
+              <button
+                  type="button"
+                  className="launch-inline-button"
+                  onClick={handleSignOut}
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+
+          <form className="launch-form" onSubmit={handleSubmit}>
+            <label className="launch-label" htmlFor="player-name-input">
+              Nickname
+            </label>
+
+            <input
+                id="player-name-input"
+                className="launch-input"
+                type="text"
+                value={draftPlayerName}
+                onChange={(event) => {
+                  setDraftPlayerName(event.target.value)
+                  if (nameError) {
+                    setNameError('')
+                  }
+                }}
+                placeholder="Type a nickname"
+                maxLength={24}
+                autoFocus
+            />
+
+            {profileError ? <div className="launch-error">{profileError}</div> : null}
+            {nameError ? <div className="launch-error">{nameError}</div> : null}
+
+            <button className="big-button launch-button" type="submit">
+              Save nickname and play
+            </button>
+          </form>
+        </section>
+      </div>
+  )
 }
 
 export default App
