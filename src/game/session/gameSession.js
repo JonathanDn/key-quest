@@ -1,4 +1,4 @@
-import { LEVELS, INITIAL_LEVEL_INDEX } from '../content/levels'
+import { LEVELS } from '../content/levels'
 import { getLessonEngine } from '../engine/lessonEngine'
 import { buildStageView } from '../ui/viewModel'
 
@@ -25,6 +25,27 @@ export function normalizePlayerName(playerName) {
     }
 
     return playerName.replace(/\s+/g, ' ').trim().slice(0, 24)
+}
+
+export function getHighestUnlockedLevelIndex(bestTimesByLevelId = {}) {
+    const sanitizedBestTimes = sanitizeBestTimesRecord(bestTimesByLevelId)
+    let highestCompletedIndex = -1
+
+    for (let levelIndex = 0; levelIndex < LEVELS.length; levelIndex += 1) {
+        const levelId = LEVELS[levelIndex]?.id
+
+        if (typeof sanitizedBestTimes[levelId] !== 'number') {
+            break
+        }
+
+        highestCompletedIndex = levelIndex
+    }
+
+    if (highestCompletedIndex >= LEVELS.length - 1) {
+        return LEVELS.length - 1
+    }
+
+    return Math.min(highestCompletedIndex + 1, LEVELS.length - 1)
 }
 
 function sanitizeBestTimesRecord(value) {
@@ -276,9 +297,10 @@ export function createInitialGameSession(
 ) {
     const normalizedPlayerName = normalizePlayerName(playerName)
     const bestTimesByLevelId = sanitizeBestTimesRecord(initialBestTimesByLevelId)
+    const initialLevelIndex = getHighestUnlockedLevelIndex(bestTimesByLevelId)
 
     return buildLevelSession(
-        INITIAL_LEVEL_INDEX,
+        initialLevelIndex,
         bestTimesByLevelId,
         {},
         normalizedPlayerName,

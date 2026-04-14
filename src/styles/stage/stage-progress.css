@@ -47,6 +47,16 @@
             opacity var(--transition-ui);
 }
 
+.world-badge,
+.level-node {
+    cursor: pointer;
+}
+
+.world-badge:disabled,
+.level-node:disabled {
+    cursor: not-allowed;
+}
+
 .world-badge.done {
     opacity: 0.8;
     background: rgba(255, 255, 255, 0.14);

@@ -9,6 +9,7 @@ function formatElapsedTime(elapsedTimeMs) {
 
 export function StageHeader({
                                 playerName,
+                                levels,
                                 level,
                                 elapsedTimeMs,
                                 bestTimeMs,
@@ -29,6 +30,8 @@ export function StageHeader({
                                 levelNodeRefs,
                                 isLeaderboardOpen,
                                 onToggleLeaderboard,
+                                highestUnlockedLevelIndex,
+                                onSelectLevel,
                             }) {
     return (
         <div className="top-bar">
@@ -78,10 +81,14 @@ export function StageHeader({
                             !gameFinished &&
                             entry.world === nextWorld &&
                             (worldCompleteFx.phase === 'portal' || worldCompleteFx.phase === 'ready')
+                        const worldAnchorLevelIndex = levels.findIndex((levelEntry) => levelEntry.world === entry.world)
+                        const isWorldUnlocked =
+                            worldAnchorLevelIndex >= 0 && worldAnchorLevelIndex <= highestUnlockedLevelIndex
 
                         return (
-                            <div
+                            <button
                                 key={entry.world}
+                                type="button"
                                 ref={(node) => {
                                     if (node) {
                                         worldBadgeRefs.current[entry.world] = node
@@ -95,10 +102,16 @@ export function StageHeader({
                                     isLockIn ? 'lock-in' : '',
                                     isUnlockPulse ? 'unlock-pulse' : '',
                                 ].join(' ')}
+                                disabled={!isWorldUnlocked}
+                                onClick={() => {
+                                    if (isWorldUnlocked) {
+                                        onSelectLevel(worldAnchorLevelIndex)
+                                    }
+                                }}
                             >
                                 <span>{entry.icon}</span>
                                 <span>{entry.title}</span>
-                            </div>
+                            </button>
                         )
                     })}
                 </div>
@@ -124,6 +137,7 @@ export function StageHeader({
                                 levelCompleteFx.active
                             const isDone = index < currentLevelInWorld - 1 || lockInNode
                             const isCurrent = isFinalNode && !isDone
+                            const isUnlocked = entry.index <= highestUnlockedLevelIndex
 
                             return (
                                 <React.Fragment key={entry.id}>
@@ -137,7 +151,8 @@ export function StageHeader({
                                         />
                                     ) : null}
 
-                                    <span
+                                    <button
+                                        type="button"
                                         ref={(node) => {
                                             if (node) {
                                                 levelNodeRefs.current[entry.id] = node
@@ -150,9 +165,15 @@ export function StageHeader({
                                             celebrateWorldNode ? 'celebrate' : '',
                                             celebrateLevelNode ? 'level-clear-pulse' : '',
                                         ].join(' ')}
+                                        disabled={!isUnlocked}
+                                        onClick={() => {
+                                            if (isUnlocked) {
+                                                onSelectLevel(entry.index)
+                                            }
+                                        }}
                                     >
                                         {isDone ? '★' : ''}
-                                    </span>
+                                    </button>
                                 </React.Fragment>
                             )
                         })}

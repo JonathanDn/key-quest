@@ -3,6 +3,7 @@ import { LEVELS } from '../game/content/levels'
 import {
     createInitialGameSession,
     gameSessionReducer,
+    getHighestUnlockedLevelIndex,
     normalizeKeyCode,
     normalizePlayerName,
     selectGameSession,
@@ -95,6 +96,10 @@ export function useTypingGame(
     ])
 
     const game = useMemo(() => selectGameSession(session), [session])
+    const highestUnlockedLevelIndex = useMemo(
+        () => getHighestUnlockedLevelIndex(game.bestTimesByLevelId),
+        [game.bestTimesByLevelId],
+    )
 
     useEffect(() => {
         function onKeyDown(event) {
@@ -175,11 +180,19 @@ export function useTypingGame(
     }, [session.timerStartedAt, session.playing, session.complete])
 
     const goToLevel = useCallback((index) => {
+        if (!Number.isInteger(index)) {
+            return
+        }
+
+        if (index < 0 || index > highestUnlockedLevelIndex) {
+            return
+        }
+
         dispatch({
             type: 'GO_TO_LEVEL',
             levelIndex: index,
         })
-    }, [])
+    }, [highestUnlockedLevelIndex])
 
     const goToNextLevel = useCallback(() => {
         if (session.levelIndex < LEVELS.length - 1) {
@@ -197,6 +210,7 @@ export function useTypingGame(
 
     return {
         ...game,
+        highestUnlockedLevelIndex,
         goToLevel,
         goToNextLevel,
     }
