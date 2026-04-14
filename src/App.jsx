@@ -13,6 +13,7 @@ import { QueueRow } from './components/QueueRow'
 import { KeyboardStage } from './components/KeyboardStage'
 import { getProgressionState } from './game/selectors/progressionSelectors'
 import { normalizePlayerName } from './game/session/gameSession'
+import { supabaseInitialization } from './lib/supabase'
 
 function GameExperience({ playerName, userId, cloudBestTimes }) {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false)
@@ -298,6 +299,41 @@ function getSuggestedPlayerNameFromUser(user) {
 }
 
 function App() {
+  if (!supabaseInitialization.isConfigured) {
+    const missingList = supabaseInitialization.missingEnvVars.join(', ')
+
+    return (
+        <div className="game-shell">
+          <section className="launch-card" aria-labelledby="service-unavailable-title">
+            <div className="launch-card-badge">⚠️ Service Unavailable</div>
+
+            <div className="launch-card-copy">
+              <h1 className="launch-card-title" id="service-unavailable-title">
+                Key Quest is temporarily unavailable
+              </h1>
+              <p className="launch-card-text">
+                This build is missing backend configuration and cannot connect to the game service.
+              </p>
+              <p className="launch-card-subtext">
+                Missing environment variables: {missingList || 'unknown'}
+              </p>
+              <p className="launch-card-subtext">
+                Please set the required variables, redeploy if needed, then refresh this page.
+              </p>
+
+              <button
+                  type="button"
+                  className="launch-inline-button"
+                  onClick={() => window.location.reload()}
+              >
+                Retry
+              </button>
+            </div>
+          </section>
+        </div>
+    )
+  }
+
   const {
     user,
     loading: authLoading,
