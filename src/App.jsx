@@ -35,6 +35,7 @@ function GameExperience({ playerName, userId, cloudBestTimes }) {
     targetColor,
     ui,
     successFx,
+    highestUnlockedLevelIndex,
     goToLevel,
     goToNextLevel,
   } = useTypingGame(playerName, isLeaderboardOpen, cloudBestTimes)
@@ -150,6 +151,7 @@ function GameExperience({ playerName, userId, cloudBestTimes }) {
           <main className="stage-card" ref={gameAreaRef} tabIndex={-1}>
             <StageHeader
                 playerName={playerName}
+                levels={levels}
                 level={level}
                 elapsedTimeMs={elapsedTimeMs}
                 bestTimeMs={bestTimeMs}
@@ -170,6 +172,8 @@ function GameExperience({ playerName, userId, cloudBestTimes }) {
                 levelNodeRefs={levelNodeRefs}
                 isLeaderboardOpen={isLeaderboardOpen}
                 onToggleLeaderboard={toggleLeaderboard}
+                highestUnlockedLevelIndex={highestUnlockedLevelIndex}
+                onSelectLevel={goToLevel}
             />
 
             <LeaderboardModal

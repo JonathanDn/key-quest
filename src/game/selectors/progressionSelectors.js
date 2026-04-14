@@ -1,7 +1,12 @@
 import { WORLD_META } from '../content/worldMeta'
 
 export function getCurrentWorldLevels(levels, currentWorld) {
-    return levels.filter((entry) => entry.world === currentWorld)
+    return levels
+        .map((entry, index) => ({
+            ...entry,
+            index,
+        }))
+        .filter((entry) => entry.world === currentWorld)
 }
 
 export function getWorldStartIndex(levels, currentWorld) {
