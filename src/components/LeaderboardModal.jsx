@@ -115,7 +115,6 @@ export function LeaderboardModal({
         <div
             className="leaderboard-backdrop"
             onClick={onClose}
-            aria-hidden="true"
         >
             <section
                 className="leaderboard-modal"
