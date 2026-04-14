@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useTypingGame } from './hooks/useTypingGame'
 import { useStageEffects } from './hooks/useStageEffects'
 import { useSupabaseAuth } from './hooks/useSupabaseAuth'
+import { useGlobalLeaderboardPreload } from './hooks/useGlobalLeaderboardPreload'
 import { getMyProfile, saveMyProfile } from './lib/profile'
 import { getMyBestTimes, saveMyBestTime } from './lib/remoteBestTimes'
 import { StageHeader } from './components/StageHeader'
@@ -35,6 +36,11 @@ function GameExperience({ playerName, userId, cloudBestTimes }) {
     goToLevel,
     goToNextLevel,
   } = useTypingGame(playerName, isLeaderboardOpen, cloudBestTimes)
+
+  const { topByLevelId: globalTopByLevelId } = useGlobalLeaderboardPreload(
+      levels,
+      Boolean(userId),
+  )
 
   const gameAreaRef = useRef(null)
   const targetAreaRef = useRef(null)
@@ -208,6 +214,7 @@ function GameExperience({ playerName, userId, cloudBestTimes }) {
                 levels={levels}
                 bestTimesByLevelId={bestTimesByLevelId}
                 currentLevelId={level.id}
+                globalTopByLevelId={globalTopByLevelId}
             />
 
             {!complete ? (
