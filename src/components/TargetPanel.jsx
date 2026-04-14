@@ -217,11 +217,6 @@ export function TargetPanel({
 
                 {ui.showWordPowerBoard ? (
                     <div className="word-power-stage" style={{ '--target-color': targetColor }}>
-                        <div className="word-power-header">
-                            <div className="word-power-task-pill">{ui.wordPower.taskLabel}</div>
-                            <div className="word-power-action-badge">{ui.wordPower.actionLabel}</div>
-                        </div>
-
                         <div className="word-power-lab">
                             <div className={ui.wordPower.highlightSource ? 'word-zone source active' : 'word-zone source'}>
                                 <div className="word-zone-label">Copy from</div>
