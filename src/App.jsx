@@ -25,6 +25,8 @@ function GameExperience({ playerName, userId, cloudBestTimes }) {
     elapsedTimeMs,
     bestTimeMs,
     bestTimesByLevelId,
+    successStreak,
+    bestSuccessStreak,
     sessionAttemptTimes,
     isNewBestTime,
     message,
@@ -151,6 +153,8 @@ function GameExperience({ playerName, userId, cloudBestTimes }) {
                 level={level}
                 elapsedTimeMs={elapsedTimeMs}
                 bestTimeMs={bestTimeMs}
+                successStreak={successStreak}
+                bestSuccessStreak={bestSuccessStreak}
                 currentWorld={progression.currentWorld}
                 currentWorldLevels={progression.currentWorldLevels}
                 currentLevelInWorld={progression.currentLevelInWorld}

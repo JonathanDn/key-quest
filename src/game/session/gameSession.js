@@ -101,6 +101,8 @@ function buildLevelSession(levelIndex, bestTimesByLevelId = {}, attemptsByLevelI
         bestTimesByLevelId,
         attemptsByLevelId,
         isNewBestTime: false,
+        successStreak: 0,
+        bestSuccessStreak: 0,
     }
 }
 
@@ -201,6 +203,20 @@ function handleKeyDown(state, normalizedCode, praise) {
                 }
                 : state.attemptsByLevelId,
             isNewBestTime,
+            successStreak: state.successStreak + 1,
+            bestSuccessStreak: Math.max(
+                state.bestSuccessStreak,
+                state.successStreak + 1,
+            ),
+        }
+    }
+
+    if (result.failure) {
+        return {
+            ...nextState,
+            message: result.message ?? state.message,
+            stageState: result.nextView ?? state.stageState,
+            successStreak: 0,
         }
     }
 
@@ -333,6 +349,8 @@ export function selectGameSession(state) {
         bestTimesByLevelId: state.bestTimesByLevelId,
         sessionAttemptTimes: state.attemptsByLevelId[level.id] ?? [],
         isNewBestTime: state.isNewBestTime,
+        successStreak: state.successStreak,
+        bestSuccessStreak: state.bestSuccessStreak,
         targetColor,
         ui: buildStageView({
             level,

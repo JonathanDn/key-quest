@@ -12,6 +12,8 @@ export function StageHeader({
                                 level,
                                 elapsedTimeMs,
                                 bestTimeMs,
+                                successStreak,
+                                bestSuccessStreak,
                                 currentWorld,
                                 currentWorldLevels,
                                 currentLevelInWorld,
@@ -168,6 +170,8 @@ export function StageHeader({
             >
                 ⏱ {formatElapsedTime(elapsedTimeMs)}
                 {typeof bestTimeMs === 'number' ? ` · Best ${formatElapsedTime(bestTimeMs)}` : ''}
+                {` · 🔥 ${successStreak}`}
+                {bestSuccessStreak > 0 ? ` (Max ${bestSuccessStreak})` : ''}
             </div>
         </div>
     )
