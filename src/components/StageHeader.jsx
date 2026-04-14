@@ -160,18 +160,23 @@ export function StageHeader({
                 </div>
             </div>
 
-            <div
-                ref={starCounterRef}
-                className={[
-                    'mini-pill',
-                    'top-bar-pill',
-                    starPulse ? 'star-counter-pop' : '',
-                ].join(' ')}
-            >
-                ⏱ {formatElapsedTime(elapsedTimeMs)}
-                {typeof bestTimeMs === 'number' ? ` · Best ${formatElapsedTime(bestTimeMs)}` : ''}
-                {` · 🔥 ${successStreak}`}
-                {bestSuccessStreak > 0 ? ` (Max ${bestSuccessStreak})` : ''}
+            <div className="top-bar-right-stack">
+                <div className="mini-pill top-bar-pill">
+                    ⏱ {formatElapsedTime(elapsedTimeMs)}
+                    {typeof bestTimeMs === 'number' ? ` · Best ${formatElapsedTime(bestTimeMs)}` : ''}
+                </div>
+
+                <div
+                    ref={starCounterRef}
+                    className={[
+                        'mini-pill',
+                        'top-bar-pill',
+                        starPulse ? 'star-counter-pop' : '',
+                    ].join(' ')}
+                >
+                    {`🔥 ${successStreak}`}
+                    {bestSuccessStreak > 0 ? ` · Max ${bestSuccessStreak}` : ''}
+                </div>
             </div>
         </div>
     )

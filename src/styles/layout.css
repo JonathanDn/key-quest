@@ -119,6 +119,14 @@ button {
     justify-self: end;
 }
 
+.top-bar-right-stack {
+    justify-self: end;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
 .scoreboard-toggle {
     width: 54px;
     height: 54px;
@@ -676,8 +684,13 @@ button {
     }
 
     .top-bar-left,
-    .top-bar-pill {
+    .top-bar-pill,
+    .top-bar-right-stack {
         justify-self: center;
+    }
+
+    .top-bar-right-stack {
+        align-items: center;
     }
 
     .mini-pill.top-bar-context-stack {
