@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getLevelLeaderboard } from '../lib/globalLeaderboard'
 
 export function useGlobalLeaderboardPreload(levels, enabled = true) {
@@ -14,55 +14,54 @@ export function useGlobalLeaderboardPreload(levels, enabled = true) {
 
     const [topByLevelId, setTopByLevelId] = useState({})
 
-    useEffect(() => {
+    const refreshGlobalLeaderboard = useCallback(async () => {
         if (!enabled || !levelIds.length) {
             setTopByLevelId({})
             return
         }
 
+        try {
+            const results = await Promise.all(
+                levelIds.map(async (levelId) => {
+                    try {
+                        const result = await getLevelLeaderboard({
+                            levelId,
+                            limit: 1,
+                        })
+
+                        return [levelId, result.topRows[0] ?? null]
+                    } catch (error) {
+                        console.error(`Failed to preload global leaderboard preview for ${levelId}:`, error)
+                        return [levelId, null]
+                    }
+                }),
+            )
+
+            setTopByLevelId(Object.fromEntries(results))
+        } catch (error) {
+            console.error('Failed to preload global leaderboard previews:', error)
+            setTopByLevelId({})
+        }
+    }, [enabled, levelIds, levelIdsSignature])
+
+    useEffect(() => {
         let isMounted = true
 
-        async function loadAllGlobalPreviews() {
-            try {
-                const results = await Promise.all(
-                    levelIds.map(async (levelId) => {
-                        try {
-                            const result = await getLevelLeaderboard({
-                                levelId,
-                                limit: 1,
-                            })
-
-                            return [levelId, result.topRows[0] ?? null]
-                        } catch (error) {
-                            console.error(`Failed to preload global leaderboard preview for ${levelId}:`, error)
-                            return [levelId, null]
-                        }
-                    }),
-                )
-
-                if (!isMounted) {
-                    return
-                }
-
-                setTopByLevelId(Object.fromEntries(results))
-            } catch (error) {
-                if (!isMounted) {
-                    return
-                }
-
-                console.error('Failed to preload global leaderboard previews:', error)
-                setTopByLevelId({})
+        refreshGlobalLeaderboard().catch((error) => {
+            if (!isMounted) {
+                return
             }
-        }
 
-        loadAllGlobalPreviews()
+            console.error('Failed to refresh global leaderboard previews:', error)
+        })
 
         return () => {
             isMounted = false
         }
-    }, [enabled, levelIdsSignature])
+    }, [refreshGlobalLeaderboard])
 
     return {
         topByLevelId,
+        refreshGlobalLeaderboard,
     }
 }

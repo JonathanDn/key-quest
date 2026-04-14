@@ -40,7 +40,10 @@ function GameExperience({ playerName, userId, cloudBestTimes }) {
     goToNextLevel,
   } = useTypingGame(playerName, isLeaderboardOpen, cloudBestTimes)
 
-  const { topByLevelId: globalTopByLevelId } = useGlobalLeaderboardPreload(
+  const {
+    topByLevelId: globalTopByLevelId,
+    refreshGlobalLeaderboard,
+  } = useGlobalLeaderboardPreload(
       levels,
       Boolean(userId),
   )
@@ -81,6 +84,16 @@ function GameExperience({ playerName, userId, cloudBestTimes }) {
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [isLeaderboardOpen])
+
+  useEffect(() => {
+    if (!isLeaderboardOpen) {
+      return
+    }
+
+    refreshGlobalLeaderboard().catch((error) => {
+      console.error('Failed to refresh global leaderboard on scoreboard open:', error)
+    })
+  }, [isLeaderboardOpen, refreshGlobalLeaderboard])
 
   const progression = useMemo(
       () =>
