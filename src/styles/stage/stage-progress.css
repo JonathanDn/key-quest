@@ -127,9 +127,11 @@
 .level-node {
     width: 20px;
     height: 20px;
+    padding: 0;
     border-radius: var(--radius-pill);
-    display: grid;
-    place-items: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     background: rgba(255, 255, 255, 0.18);
     border: 2px solid rgba(255, 255, 255, 0.12);
     color: #ffffff;
