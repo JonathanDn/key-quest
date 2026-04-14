@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useBestTimeSync } from './hooks/useBestTimeSync'
 import { useTypingGame } from './hooks/useTypingGame'
 import { useStageEffects } from './hooks/useStageEffects'
 import { useSupabaseAuth } from './hooks/useSupabaseAuth'
 import { useGlobalLeaderboardPreload } from './hooks/useGlobalLeaderboardPreload'
 import { getMyProfile, saveMyProfile } from './lib/profile'
-import { getMyBestTimes, saveMyBestTime } from './lib/remoteBestTimes'
+import { getMyBestTimes } from './lib/remoteBestTimes'
 import { StageHeader } from './components/StageHeader'
 import { LeaderboardModal } from './components/LeaderboardModal'
 import { TargetPanel } from './components/TargetPanel'
@@ -15,7 +16,6 @@ import { normalizePlayerName } from './game/session/gameSession'
 
 function GameExperience({ playerName, userId, cloudBestTimes }) {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false)
-  const syncedBestTimesRef = useRef(cloudBestTimes ?? {})
 
   const {
     levels,
@@ -49,50 +49,11 @@ function GameExperience({ playerName, userId, cloudBestTimes }) {
   const worldBadgeRefs = useRef({})
   const levelNodeRefs = useRef({})
 
-  useEffect(() => {
-    syncedBestTimesRef.current = cloudBestTimes ?? {}
-  }, [cloudBestTimes, playerName, userId])
-
-  useEffect(() => {
-    if (!userId) {
-      return
-    }
-
-    const lastSyncedBestTimes = syncedBestTimesRef.current ?? {}
-
-    const pendingEntries = Object.entries(bestTimesByLevelId ?? {}).filter(
-        ([levelId, nextBestTimeMs]) =>
-            typeof nextBestTimeMs === 'number' &&
-            (
-                typeof lastSyncedBestTimes[levelId] !== 'number' ||
-                nextBestTimeMs < lastSyncedBestTimes[levelId]
-            ),
-    )
-
-    if (!pendingEntries.length) {
-      return
-    }
-
-    const nextSyncedBestTimes = { ...lastSyncedBestTimes }
-
-    pendingEntries.forEach(([levelId, nextBestTimeMs]) => {
-      nextSyncedBestTimes[levelId] = nextBestTimeMs
-    })
-
-    syncedBestTimesRef.current = nextSyncedBestTimes
-
-    Promise.all(
-        pendingEntries.map(([levelId, nextBestTimeMs]) =>
-            saveMyBestTime({
-              userId,
-              levelId,
-              bestTimeMs: nextBestTimeMs,
-            }),
-        ),
-    ).catch((error) => {
-      console.error('Failed to sync best times to Supabase:', error)
-    })
-  }, [userId, bestTimesByLevelId])
+  useBestTimeSync({
+    userId,
+    bestTimesByLevelId,
+    cloudBestTimes,
+  })
 
   useEffect(() => {
     if (playing && !isLeaderboardOpen) {
