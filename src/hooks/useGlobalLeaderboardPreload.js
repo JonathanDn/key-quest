@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { getLevelLeaderboard } from '../lib/globalLeaderboard'
+import { getLevelLeaderboardBatch } from '../lib/globalLeaderboard'
 
 export function useGlobalLeaderboardPreload(levels, enabled = true) {
     const levelIds = useMemo(
@@ -21,23 +21,17 @@ export function useGlobalLeaderboardPreload(levels, enabled = true) {
         }
 
         try {
-            const results = await Promise.all(
-                levelIds.map(async (levelId) => {
-                    try {
-                        const result = await getLevelLeaderboard({
-                            levelId,
-                            limit: 1,
-                        })
+            const rowsByLevelId = await getLevelLeaderboardBatch({
+                levelIds,
+                limit: 1,
+            })
 
-                        return [levelId, result.topRows[0] ?? null]
-                    } catch (error) {
-                        console.error(`Failed to preload global leaderboard preview for ${levelId}:`, error)
-                        return [levelId, null]
-                    }
-                }),
-            )
+            const nextTopByLevelId = levelIds.reduce((accumulator, levelId) => {
+                accumulator[levelId] = rowsByLevelId[levelId]?.[0] ?? null
+                return accumulator
+            }, {})
 
-            setTopByLevelId(Object.fromEntries(results))
+            setTopByLevelId(nextTopByLevelId)
         } catch (error) {
             console.error('Failed to preload global leaderboard previews:', error)
             setTopByLevelId({})
