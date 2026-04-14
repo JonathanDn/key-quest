@@ -8,6 +8,7 @@ import {
     saveNicknameAndEnterGame,
     signIn,
     signUp,
+    switchScoreboardToMyBests,
     waitForGame,
 } from './keyQuest.helpers'
 
@@ -20,6 +21,7 @@ test('account auth, nickname, cloud save, cloud fetch, and best-score overwrite 
     await completeCurrentLevel(page, { stepDelayMs: 220 })
 
     await openScoreboard(page)
+    await switchScoreboardToMyBests(page)
     const firstBest = await readBasicsWorldLevel1BestSeconds(page)
     expect(firstBest).toBeGreaterThan(0)
     await closeScoreboard(page)
@@ -28,6 +30,7 @@ test('account auth, nickname, cloud save, cloud fetch, and best-score overwrite 
     await waitForGame(page)
 
     await openScoreboard(page)
+    await switchScoreboardToMyBests(page)
     const pulledAfterRefresh = await readBasicsWorldLevel1BestSeconds(page)
     expect(pulledAfterRefresh).toBe(firstBest)
     await closeScoreboard(page)
@@ -35,6 +38,7 @@ test('account auth, nickname, cloud save, cloud fetch, and best-score overwrite 
     await completeCurrentLevel(page, { stepDelayMs: 15 })
 
     await openScoreboard(page)
+    await switchScoreboardToMyBests(page)
     const improvedBest = await readBasicsWorldLevel1BestSeconds(page)
     expect(improvedBest).toBeLessThan(firstBest)
     await closeScoreboard(page)
@@ -45,6 +49,7 @@ test('account auth, nickname, cloud save, cloud fetch, and best-score overwrite 
     await completeCurrentLevel(page, { stepDelayMs: 220 })
 
     await openScoreboard(page)
+    await switchScoreboardToMyBests(page)
     const afterWorseReplay = await readBasicsWorldLevel1BestSeconds(page)
     expect(afterWorseReplay).toBe(improvedBest)
     await closeScoreboard(page)
@@ -63,7 +68,6 @@ test('returning signed-in user restores session and skips auth/nickname screens'
     await expect(page.getByRole('textbox', { name: 'Nickname' })).toHaveCount(0)
 
     await openScoreboard(page)
-    await expect(page.getByRole('heading', { name: 'My Bests' })).toBeVisible()
     await closeScoreboard(page)
 })
 
@@ -75,6 +79,7 @@ test('existing account can sign in again and resume from cloud state', async ({ 
     await completeCurrentLevel(page, { stepDelayMs: 180 })
 
     await openScoreboard(page)
+    await switchScoreboardToMyBests(page)
     const originalBest = await readBasicsWorldLevel1BestSeconds(page)
     await closeScoreboard(page)
 
@@ -88,6 +93,7 @@ test('existing account can sign in again and resume from cloud state', async ({ 
     await waitForGame(page)
 
     await openScoreboard(page)
+    await switchScoreboardToMyBests(page)
     const pulledBest = await readBasicsWorldLevel1BestSeconds(page)
     expect(pulledBest).toBe(originalBest)
     await closeScoreboard(page)

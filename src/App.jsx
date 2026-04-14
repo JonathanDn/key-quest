@@ -207,6 +207,7 @@ function GameExperience({ playerName, userId, cloudBestTimes }) {
                 playerName={playerName}
                 levels={levels}
                 bestTimesByLevelId={bestTimesByLevelId}
+                currentLevelId={level.id}
             />
 
             {!complete ? (

@@ -66,7 +66,9 @@ export async function openScoreboard(page) {
 
     const dialog = page.locator('.leaderboard-modal')
     await expect(dialog).toBeVisible()
-    await expect(dialog.getByRole('heading', { name: 'My Bests' })).toBeVisible()
+    await expect(dialog.getByRole('heading', { name: 'Scoreboard' })).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'My Bests' })).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Global' })).toBeVisible()
 
     return dialog
 }
@@ -79,8 +81,21 @@ export async function closeScoreboard(page) {
     await expect(dialog).toBeHidden()
 }
 
+export async function switchScoreboardToMyBests(page) {
+    const dialog = page.locator('.leaderboard-modal')
+    await dialog.getByRole('button', { name: 'My Bests' }).click()
+    await expect(dialog.getByRole('button', { name: 'My Bests' })).toHaveClass(/active/)
+}
+
+export async function switchScoreboardToGlobal(page) {
+    const dialog = page.locator('.leaderboard-modal')
+    await dialog.getByRole('button', { name: 'Global' }).click()
+    await expect(dialog.getByRole('button', { name: 'Global' })).toHaveClass(/active/)
+}
+
 export async function readBasicsWorldLevel1BestSeconds(page) {
-    const basicsSection = page
+    const dialog = page.locator('.leaderboard-modal')
+    const basicsSection = dialog
         .locator('.leaderboard-world-section')
         .filter({ hasText: 'Basics World' })
         .first()

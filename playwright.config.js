@@ -9,6 +9,8 @@ export default defineConfig({
     fullyParallel: false,
     retries: process.env.CI ? 2 : 0,
     reporter: 'list',
+    globalSetup: './tests/e2e/global.setup.js',
+    globalTeardown: './tests/e2e/global.teardown.js',
     use: {
         baseURL: 'http://127.0.0.1:4173',
         trace: 'on-first-retry',
