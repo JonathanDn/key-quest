@@ -69,6 +69,7 @@ export const wordPowerEngine = {
         return {
             type: 'message',
             message: `Try ${target.label}`,
+            failure: true,
         }
     },
 }

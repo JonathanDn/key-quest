@@ -31,3 +31,24 @@ Then open the local URL printed by Vite.
 
 - The project uses physical key codes such as `KeyA` and `Semicolon`, which aligns well with finger-training gameplay because physical key positions remain stable across layouts.
 - This is a seed project: the next obvious additions are audio feedback, a richer lesson authoring system, saved progress, and teacher/parent dashboards.
+
+## Feature proposal: "Perfect Type Streak"
+
+### Problem
+Players can finish levels, but they currently get weak feedback on consistency. A visible streak system can motivate focused, error-free typing.
+
+### Design
+- Add a `successStreak` counter that increments for each successful target.
+- Add a `bestSuccessStreak` tracker for the highest streak in the current level run.
+- Any failed keypress (`failure: true` from an engine result) immediately resets `successStreak` to `0`.
+- Render both in the stage header: `🔥 <current> (Max <best>)`.
+
+### Rules
+- Success path: `successStreak += 1`, `bestSuccessStreak = max(bestSuccessStreak, successStreak)`.
+- Failure path: `successStreak = 0`, but `bestSuccessStreak` stays unchanged.
+- Level change / replay: both values reset (fresh run).
+
+### Why this works
+- Gives instant feedback on momentum.
+- Rewards precision without punishing progress.
+- Works across single-key, prompt-typing, and combo levels via engine-provided failure flags.

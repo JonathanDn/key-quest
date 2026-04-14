@@ -120,6 +120,7 @@ export const singleKeyEngine = {
             return {
                 type: 'message',
                 message: `Try ${codeToLabel[target.code] ?? target.code}`,
+                failure: true,
             }
         }
 
@@ -144,6 +145,7 @@ export const singleKeyEngine = {
         return {
             type: 'message',
             message: `Try ${target.label}`,
+            failure: true,
         }
     },
 }

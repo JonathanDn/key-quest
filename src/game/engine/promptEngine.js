@@ -116,6 +116,7 @@ export const promptEngine = {
         return {
             type: 'message',
             message: `Try ${codeToLabel[target.code] ?? target.code}`,
+            failure: true,
         }
     },
 }
