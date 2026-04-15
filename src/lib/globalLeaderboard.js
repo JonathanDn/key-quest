@@ -39,12 +39,14 @@ export async function getLevelLeaderboardBatch({ levelIds, limit = 1 }) {
         return {}
     }
 
-    if (batchLeaderboardRpcState === 'missing') {
+    if (batchLeaderboardRpcState === 'missing' || batchLeaderboardRpcState === 'checking') {
         return fetchLeaderboardsIndividually({
             levelIds: normalizedLevelIds,
             limit,
         })
     }
+
+    batchLeaderboardRpcState = 'checking'
 
     const { data, error } = await supabase.rpc('get_level_leaderboard_batch', {
         p_level_ids: normalizedLevelIds,
@@ -61,6 +63,7 @@ export async function getLevelLeaderboardBatch({ levelIds, limit = 1 }) {
             })
         }
 
+        batchLeaderboardRpcState = 'unknown'
         throw error
     }
 
