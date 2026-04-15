@@ -38,6 +38,13 @@ export async function getLevelLeaderboardBatch({ levelIds, limit = 1 }) {
     })
 
     if (error) {
+        if (isMissingBatchRpc(error)) {
+            return fetchLeaderboardsIndividually({
+                levelIds: normalizedLevelIds,
+                limit,
+            })
+        }
+
         throw error
     }
 
@@ -47,4 +54,27 @@ export async function getLevelLeaderboardBatch({ levelIds, limit = 1 }) {
         accumulator[levelId] = rows.filter((row) => row.level_id === levelId)
         return accumulator
     }, {})
+}
+
+function isMissingBatchRpc(error) {
+    return (
+        error?.code === 'PGRST202' &&
+        typeof error?.message === 'string' &&
+        error.message.includes('get_level_leaderboard_batch')
+    )
+}
+
+async function fetchLeaderboardsIndividually({ levelIds, limit }) {
+    const results = await Promise.all(
+        levelIds.map(async (levelId) => {
+            const leaderboard = await getLevelLeaderboard({
+                levelId,
+                limit,
+            })
+
+            return [levelId, leaderboard.rows]
+        }),
+    )
+
+    return Object.fromEntries(results)
 }
