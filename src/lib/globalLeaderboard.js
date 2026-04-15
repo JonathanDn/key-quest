@@ -1,5 +1,7 @@
 import { supabase } from './supabase'
 
+let batchLeaderboardRpcState = 'unknown'
+
 function createLeaderboardResult(rows = []) {
     return {
         rows,
@@ -32,6 +34,13 @@ export async function getLevelLeaderboardBatch({ levelIds, limit = 1 }) {
         return {}
     }
 
+    if (batchLeaderboardRpcState === 'missing') {
+        return fetchLeaderboardsIndividually({
+            levelIds: normalizedLevelIds,
+            limit,
+        })
+    }
+
     const { data, error } = await supabase.rpc('get_level_leaderboard_batch', {
         p_level_ids: normalizedLevelIds,
         p_limit: limit,
@@ -39,6 +48,7 @@ export async function getLevelLeaderboardBatch({ levelIds, limit = 1 }) {
 
     if (error) {
         if (isMissingBatchRpc(error)) {
+            batchLeaderboardRpcState = 'missing'
             return fetchLeaderboardsIndividually({
                 levelIds: normalizedLevelIds,
                 limit,
@@ -47,6 +57,8 @@ export async function getLevelLeaderboardBatch({ levelIds, limit = 1 }) {
 
         throw error
     }
+
+    batchLeaderboardRpcState = 'available'
 
     const rows = data ?? []
 
@@ -57,11 +69,15 @@ export async function getLevelLeaderboardBatch({ levelIds, limit = 1 }) {
 }
 
 function isMissingBatchRpc(error) {
-    return (
-        error?.code === 'PGRST202' &&
-        typeof error?.message === 'string' &&
-        error.message.includes('get_level_leaderboard_batch')
-    )
+    const message = typeof error?.message === 'string' ? error.message : ''
+    const details = typeof error?.details === 'string' ? error.details : ''
+    const code = typeof error?.code === 'string' ? error.code : ''
+
+    const mentionsBatchRpc =
+        message.includes('get_level_leaderboard_batch') ||
+        details.includes('get_level_leaderboard_batch')
+
+    return code === 'PGRST202' || ((error?.status === 404 || code === '404') && mentionsBatchRpc)
 }
 
 async function fetchLeaderboardsIndividually({ levelIds, limit }) {
