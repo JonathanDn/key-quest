@@ -62,7 +62,7 @@ export async function waitForGame(page) {
 }
 
 export async function editNicknameInGame(page, nickname) {
-    await page.getByRole('button', { name: 'Edit' }).click()
+    await page.getByRole('button', { name: 'Edit nickname' }).click()
     const nicknameInput = page.getByRole('textbox', { name: 'Nickname' })
     await expect(nicknameInput).toBeVisible()
     await nicknameInput.fill(nickname)
