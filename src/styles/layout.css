@@ -98,6 +98,8 @@ button {
 
 .mini-pill.top-bar-context-stack.editing {
     min-width: 260px;
+    min-height: calc(var(--mini-pill-min-height) + 10px);
+    padding-block: 12px;
     gap: 8px;
 }
 
