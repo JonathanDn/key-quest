@@ -96,6 +96,11 @@ button {
     text-align: left;
 }
 
+.mini-pill.top-bar-context-stack.editing {
+    min-width: 260px;
+    gap: 8px;
+}
+
 .top-bar-context-player,
 .top-bar-context-level {
     display: block;
@@ -171,15 +176,20 @@ button {
 }
 
 .top-bar-player-edit-form {
-    display: inline-flex;
-    align-items: center;
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 6px;
-    flex-wrap: wrap;
+}
+
+.top-bar-player-edit-actions {
+    display: flex;
+    gap: 6px;
 }
 
 .top-bar-player-edit-input {
-    width: 140px;
-    max-width: 42vw;
+    width: 100%;
+    min-width: 0;
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.28);
     color: inherit;
@@ -195,6 +205,11 @@ button {
     color: rgba(255, 178, 178, 1);
     font-size: 0.72rem;
     font-weight: 700;
+}
+
+.top-bar-player-edit-action {
+    flex: 1 1 0;
+    justify-content: center;
 }
 
 .sr-only {
@@ -797,6 +812,10 @@ button {
     .mini-pill.top-bar-context-stack {
         align-items: center;
         text-align: center;
+    }
+
+    .mini-pill.top-bar-context-stack.editing {
+        min-width: min(320px, 78vw);
     }
 
     .leaderboard-backdrop {
