@@ -107,6 +107,70 @@ button {
     line-height: 1.05;
 }
 
+.top-bar-context-player-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.top-bar-player-edit-toggle,
+.top-bar-player-edit-action {
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.26);
+    background: rgba(255, 255, 255, 0.08);
+    color: inherit;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.73rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    padding: 6px 10px;
+}
+
+.top-bar-player-edit-action.secondary {
+    opacity: 0.9;
+}
+
+.top-bar-player-edit-form {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.top-bar-player-edit-input {
+    width: 140px;
+    max-width: 42vw;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    color: inherit;
+    border-radius: 10px;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 6px 8px;
+}
+
+.top-bar-player-edit-error {
+    color: rgba(255, 178, 178, 1);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .top-bar-context-level {
     font-size: 0.88rem;
     font-weight: 800;

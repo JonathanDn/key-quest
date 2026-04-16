@@ -15,8 +15,17 @@ import { getProgressionState } from './game/selectors/progressionSelectors'
 import { normalizePlayerName } from './game/session/gameSession'
 import { supabaseInitialization } from './lib/supabase'
 
-function GameExperience({ playerName, userId, cloudBestTimes }) {
+function GameExperience({
+  playerName,
+  userId,
+  cloudBestTimes,
+  onSavePlayerName,
+}) {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false)
+  const [isEditingPlayerName, setIsEditingPlayerName] = useState(false)
+  const [draftPlayerName, setDraftPlayerName] = useState(playerName)
+  const [playerNameError, setPlayerNameError] = useState('')
+  const [isSavingPlayerName, setIsSavingPlayerName] = useState(false)
 
   const {
     levels,
@@ -61,6 +70,10 @@ function GameExperience({ playerName, userId, cloudBestTimes }) {
     bestTimesByLevelId,
     cloudBestTimes,
   })
+
+  useEffect(() => {
+    setDraftPlayerName(playerName)
+  }, [playerName])
 
   useEffect(() => {
     if (playing && !isLeaderboardOpen) {
@@ -159,12 +172,28 @@ function GameExperience({ playerName, userId, cloudBestTimes }) {
     setIsLeaderboardOpen((currentValue) => !currentValue)
   }
 
+  async function handleSavePlayerName(event) {
+    event.preventDefault()
+
+    try {
+      setPlayerNameError('')
+      setIsSavingPlayerName(true)
+      await onSavePlayerName(draftPlayerName)
+      setIsEditingPlayerName(false)
+    } catch (error) {
+      setPlayerNameError(error?.message || 'Could not save your nickname.')
+    } finally {
+      setIsSavingPlayerName(false)
+    }
+  }
+
   return (
       <div className="game-shell">
         <div className="game-screen">
           <main className="stage-card" ref={gameAreaRef} tabIndex={-1}>
             <StageHeader
                 playerName={playerName}
+                draftPlayerName={draftPlayerName}
                 levels={levels}
                 level={level}
                 elapsedTimeMs={elapsedTimeMs}
@@ -188,6 +217,26 @@ function GameExperience({ playerName, userId, cloudBestTimes }) {
                 onToggleLeaderboard={toggleLeaderboard}
                 highestUnlockedLevelIndex={highestUnlockedLevelIndex}
                 onSelectLevel={goToLevel}
+                isEditingPlayerName={isEditingPlayerName}
+                isSavingPlayerName={isSavingPlayerName}
+                playerNameError={playerNameError}
+                onStartEditingPlayerName={() => {
+                  setDraftPlayerName(playerName)
+                  setPlayerNameError('')
+                  setIsEditingPlayerName(true)
+                }}
+                onDraftPlayerNameChange={(nextValue) => {
+                  setDraftPlayerName(nextValue)
+                  if (playerNameError) {
+                    setPlayerNameError('')
+                  }
+                }}
+                onSavePlayerName={handleSavePlayerName}
+                onCancelEditingPlayerName={() => {
+                  setDraftPlayerName(playerName)
+                  setPlayerNameError('')
+                  setIsEditingPlayerName(false)
+                }}
             />
 
             <LeaderboardModal
@@ -450,20 +499,36 @@ function App() {
 
     try {
       setNameError('')
-      setProfileError('')
-
-      const savedProfile = await saveMyProfile({
-        userId: user.id,
-        nickname: normalizedPlayerName,
-      })
-
-      const nextNickname = normalizePlayerName(savedProfile.nickname)
-
-      setDraftPlayerName(nextNickname)
-      setActivePlayerName(nextNickname)
+      await persistNickname(normalizedPlayerName)
     } catch (error) {
       setNameError(error?.message || 'Could not save your nickname.')
     }
+  }
+
+  async function persistNickname(nextNickname) {
+    const normalizedPlayerName = normalizePlayerName(nextNickname)
+
+    if (!normalizedPlayerName) {
+      throw new Error('Please type your nickname before you play.')
+    }
+
+    if (!user?.id) {
+      throw new Error('You must be signed in first.')
+    }
+
+    setProfileError('')
+
+    const savedProfile = await saveMyProfile({
+      userId: user.id,
+      nickname: normalizedPlayerName,
+    })
+
+    const finalNickname = normalizePlayerName(savedProfile.nickname)
+
+    setDraftPlayerName(finalNickname)
+    setActivePlayerName(finalNickname)
+
+    return finalNickname
   }
 
   async function handleAuthSubmit(event) {
@@ -521,6 +586,7 @@ function App() {
             playerName={activePlayerName}
             userId={user?.id ?? null}
             cloudBestTimes={cloudBestTimes}
+            onSavePlayerName={persistNickname}
         />
     )
   }
