@@ -105,6 +105,14 @@ button {
     font-size: 1rem;
     font-weight: 900;
     line-height: 1.05;
+    transition:
+        color 180ms ease,
+        text-shadow 180ms ease;
+}
+
+.top-bar-context-player.saved {
+    color: rgb(168, 247, 189);
+    text-shadow: 0 0 10px rgba(97, 228, 153, 0.4);
 }
 
 .top-bar-context-player-row {
@@ -126,6 +134,36 @@ button {
     letter-spacing: 0.02em;
     line-height: 1;
     padding: 6px 10px;
+}
+
+.top-bar-player-save-indicator {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid rgba(97, 228, 153, 0.55);
+    background: rgba(97, 228, 153, 0.18);
+    color: rgb(196, 255, 216);
+    font-size: 0.67rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    padding: 4px 8px;
+    animation: nickname-save-pulse 680ms ease;
+}
+
+@keyframes nickname-save-pulse {
+    0% {
+        transform: scale(0.88);
+        opacity: 0;
+    }
+    55% {
+        transform: scale(1.03);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 .top-bar-player-edit-action.secondary {
