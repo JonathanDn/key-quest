@@ -55,9 +55,28 @@ export async function saveMyProfile({ userId, nickname }) {
         })
         .eq('user_id', userId)
 
-    if (bestTimesUpdateError) {
+    if (bestTimesUpdateError && isMissingNicknameColumnError(bestTimesUpdateError)) {
+        const { error: bestTimesTouchError } = await supabase
+            .from('user_best_times')
+            .update({
+                updated_at: updatedAt,
+            })
+            .eq('user_id', userId)
+
+        if (bestTimesTouchError) {
+            throw bestTimesTouchError
+        }
+    } else if (bestTimesUpdateError) {
         throw bestTimesUpdateError
     }
 
     return data
+}
+
+function isMissingNicknameColumnError(error) {
+    const message = `${error?.message ?? ''}`.toLowerCase()
+    return (
+        message.includes("could not find the 'nickname' column") &&
+        message.includes('user_best_times')
+    )
 }

@@ -132,7 +132,72 @@ describe('profile helpers', () => {
         expect(eqMock).toHaveBeenCalledWith('user_id', 'user-1')
     })
 
-    it('throws when syncing nickname into best-time rows fails', async () => {
+    it('falls back when user_best_times.nickname column is missing', async () => {
+        const singleMock = vi.fn().mockResolvedValue({
+            data: {
+                id: 'user-1',
+                nickname: 'Player One',
+                created_at: '2026-04-12T00:00:00.000Z',
+                updated_at: '2026-04-12T00:00:00.000Z',
+            },
+            error: null,
+        })
+
+        const selectMock = vi.fn().mockReturnValue({
+            single: singleMock,
+        })
+
+        const upsertMock = vi.fn().mockReturnValue({
+            select: selectMock,
+        })
+
+        const eqWithNicknameMock = vi.fn().mockResolvedValue({
+            error: new Error("Could not find the 'nickname' column of 'user_best_times' in the schema cache"),
+        })
+
+        const updateNicknameMock = vi.fn().mockReturnValue({
+            eq: eqWithNicknameMock,
+        })
+
+        const eqTouchMock = vi.fn().mockResolvedValue({
+            error: null,
+        })
+
+        const updateTouchMock = vi.fn().mockReturnValue({
+            eq: eqTouchMock,
+        })
+
+        fromMock
+            .mockReturnValueOnce({
+                upsert: upsertMock,
+            })
+            .mockReturnValueOnce({
+                update: updateNicknameMock,
+            })
+            .mockReturnValueOnce({
+                update: updateTouchMock,
+            })
+
+        await expect(
+            saveMyProfile({
+                userId: 'user-1',
+                nickname: 'Player One',
+            }),
+        ).resolves.toEqual({
+            id: 'user-1',
+            nickname: 'Player One',
+            created_at: '2026-04-12T00:00:00.000Z',
+            updated_at: '2026-04-12T00:00:00.000Z',
+        })
+
+        expect(updateTouchMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                updated_at: expect.any(String),
+            }),
+        )
+    })
+
+    it('throws when syncing best-time rows fails for other reasons', async () => {
         const singleMock = vi.fn().mockResolvedValue({
             data: {
                 id: 'user-1',
