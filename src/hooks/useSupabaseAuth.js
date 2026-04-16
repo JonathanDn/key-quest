@@ -1,6 +1,17 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
+export function isUserAlreadyRegisteredError(error) {
+    if (!error) {
+        return false
+    }
+
+    const errorCode = typeof error.code === 'string' ? error.code.toLowerCase() : ''
+    const errorMessage = typeof error.message === 'string' ? error.message.toLowerCase() : ''
+
+    return errorCode === 'user_already_exists' || errorMessage.includes('already registered')
+}
+
 export function useSupabaseAuth() {
     const [session, setSession] = useState(null)
     const [user, setUser] = useState(null)
@@ -61,6 +72,19 @@ export function useSupabaseAuth() {
             email: normalizedEmail,
             password,
         })
+
+        if (error && isUserAlreadyRegisteredError(error)) {
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+                email: normalizedEmail,
+                password,
+            })
+
+            if (signInError) {
+                throw new Error('This email is already registered. Sign in with your existing password or reset it.')
+            }
+
+            return signInData
+        }
 
         if (error) {
             throw error
