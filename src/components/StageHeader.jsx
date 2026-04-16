@@ -126,8 +126,10 @@ export function StageHeader({
                                 type="button"
                                 className="top-bar-player-edit-toggle"
                                 onClick={onStartEditingPlayerName}
+                                aria-label="Edit nickname"
+                                title="Edit nickname"
                             >
-                                Edit
+                                ✏️
                             </button>
                         </div>
                     )}
