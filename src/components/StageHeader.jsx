@@ -35,6 +35,7 @@ export function StageHeader({
                                 onSelectLevel,
                                 isEditingPlayerName,
                                 isSavingPlayerName,
+                                didSavePlayerName,
                                 playerNameError,
                                 onStartEditingPlayerName,
                                 onDraftPlayerNameChange,
@@ -101,7 +102,19 @@ export function StageHeader({
                     ) : (
                         <div className="top-bar-context-player-row">
                             {playerName ? (
-                                <span className="top-bar-context-player">{playerName}</span>
+                                <span
+                                    className={[
+                                        'top-bar-context-player',
+                                        didSavePlayerName ? 'saved' : '',
+                                    ].join(' ')}
+                                >
+                                    {playerName}
+                                </span>
+                            ) : null}
+                            {didSavePlayerName ? (
+                                <span className="top-bar-player-save-indicator" aria-live="polite">
+                                    Saved ✓
+                                </span>
                             ) : null}
                             <button
                                 type="button"
