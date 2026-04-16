@@ -9,6 +9,7 @@ function formatElapsedTime(elapsedTimeMs) {
 
 export function StageHeader({
                                 playerName,
+                                draftPlayerName,
                                 levels,
                                 level,
                                 elapsedTimeMs,
@@ -32,6 +33,13 @@ export function StageHeader({
                                 onToggleLeaderboard,
                                 highestUnlockedLevelIndex,
                                 onSelectLevel,
+                                isEditingPlayerName,
+                                isSavingPlayerName,
+                                playerNameError,
+                                onStartEditingPlayerName,
+                                onDraftPlayerNameChange,
+                                onSavePlayerName,
+                                onCancelEditingPlayerName,
                             }) {
     return (
         <div className="top-bar">
@@ -56,8 +64,56 @@ export function StageHeader({
                 </button>
 
                 <div className="mini-pill top-bar-context-pill top-bar-context-stack">
-                    {playerName ? (
-                        <span className="top-bar-context-player">{playerName}</span>
+                    {isEditingPlayerName ? (
+                        <form
+                            className="top-bar-player-edit-form"
+                            onSubmit={onSavePlayerName}
+                        >
+                            <label className="sr-only" htmlFor="in-game-player-name-input">
+                                Nickname
+                            </label>
+                            <input
+                                id="in-game-player-name-input"
+                                className="top-bar-player-edit-input"
+                                type="text"
+                                value={draftPlayerName}
+                                onChange={(event) => onDraftPlayerNameChange(event.target.value)}
+                                placeholder="Type a nickname"
+                                maxLength={24}
+                                autoFocus
+                            />
+                            <button
+                                type="submit"
+                                className="top-bar-player-edit-action"
+                                disabled={isSavingPlayerName}
+                            >
+                                {isSavingPlayerName ? 'Saving…' : 'Save'}
+                            </button>
+                            <button
+                                type="button"
+                                className="top-bar-player-edit-action secondary"
+                                onClick={onCancelEditingPlayerName}
+                                disabled={isSavingPlayerName}
+                            >
+                                Cancel
+                            </button>
+                        </form>
+                    ) : (
+                        <div className="top-bar-context-player-row">
+                            {playerName ? (
+                                <span className="top-bar-context-player">{playerName}</span>
+                            ) : null}
+                            <button
+                                type="button"
+                                className="top-bar-player-edit-toggle"
+                                onClick={onStartEditingPlayerName}
+                            >
+                                Edit
+                            </button>
+                        </div>
+                    )}
+                    {playerNameError ? (
+                        <span className="top-bar-player-edit-error">{playerNameError}</span>
                     ) : null}
                     <span className="top-bar-context-level">
                         {level.title} · {currentLevelInWorld}/{currentWorldLevels.length}

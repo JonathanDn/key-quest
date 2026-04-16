@@ -87,9 +87,21 @@ describe('profile helpers', () => {
             select: selectMock,
         })
 
-        fromMock.mockReturnValue({
+        const eqMock = vi.fn().mockResolvedValue({
+            error: null,
+        })
+
+        const updateMock = vi.fn().mockReturnValue({
+            eq: eqMock,
+        })
+
+        fromMock
+            .mockReturnValueOnce({
             upsert: upsertMock,
         })
+            .mockReturnValueOnce({
+                update: updateMock,
+            })
 
         await expect(
             saveMyProfile({
@@ -104,6 +116,7 @@ describe('profile helpers', () => {
         })
 
         expect(fromMock).toHaveBeenCalledWith('profiles')
+        expect(fromMock).toHaveBeenCalledWith('user_best_times')
         expect(upsertMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 id: 'user-1',
@@ -111,5 +124,54 @@ describe('profile helpers', () => {
             }),
             { onConflict: 'id' },
         )
+        expect(updateMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                nickname: 'Player One',
+            }),
+        )
+        expect(eqMock).toHaveBeenCalledWith('user_id', 'user-1')
+    })
+
+    it('throws when syncing nickname into best-time rows fails', async () => {
+        const singleMock = vi.fn().mockResolvedValue({
+            data: {
+                id: 'user-1',
+                nickname: 'Player One',
+                created_at: '2026-04-12T00:00:00.000Z',
+                updated_at: '2026-04-12T00:00:00.000Z',
+            },
+            error: null,
+        })
+
+        const selectMock = vi.fn().mockReturnValue({
+            single: singleMock,
+        })
+
+        const upsertMock = vi.fn().mockReturnValue({
+            select: selectMock,
+        })
+
+        const eqMock = vi.fn().mockResolvedValue({
+            error: new Error('sync failed'),
+        })
+
+        const updateMock = vi.fn().mockReturnValue({
+            eq: eqMock,
+        })
+
+        fromMock
+            .mockReturnValueOnce({
+                upsert: upsertMock,
+            })
+            .mockReturnValueOnce({
+                update: updateMock,
+            })
+
+        await expect(
+            saveMyProfile({
+                userId: 'user-1',
+                nickname: 'Player One',
+            }),
+        ).rejects.toThrow('sync failed')
     })
 })

@@ -20,6 +20,7 @@ export async function getMyProfile(userId) {
 
 export async function saveMyProfile({ userId, nickname }) {
     const normalizedNickname = nickname.trim()
+    const updatedAt = new Date().toISOString()
 
     if (!userId) {
         throw new Error('Missing user id.')
@@ -35,7 +36,7 @@ export async function saveMyProfile({ userId, nickname }) {
             {
                 id: userId,
                 nickname: normalizedNickname,
-                updated_at: new Date().toISOString(),
+                updated_at: updatedAt,
             },
             { onConflict: 'id' },
         )
@@ -44,6 +45,18 @@ export async function saveMyProfile({ userId, nickname }) {
 
     if (error) {
         throw error
+    }
+
+    const { error: bestTimesUpdateError } = await supabase
+        .from('user_best_times')
+        .update({
+            nickname: normalizedNickname,
+            updated_at: updatedAt,
+        })
+        .eq('user_id', userId)
+
+    if (bestTimesUpdateError) {
+        throw bestTimesUpdateError
     }
 
     return data
