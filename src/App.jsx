@@ -26,6 +26,7 @@ function GameExperience({
   const [draftPlayerName, setDraftPlayerName] = useState(playerName)
   const [playerNameError, setPlayerNameError] = useState('')
   const [isSavingPlayerName, setIsSavingPlayerName] = useState(false)
+  const [didSavePlayerName, setDidSavePlayerName] = useState(false)
 
   const {
     levels,
@@ -179,6 +180,7 @@ function GameExperience({
       setPlayerNameError('')
       setIsSavingPlayerName(true)
       await onSavePlayerName(draftPlayerName)
+      setDidSavePlayerName(true)
       setIsEditingPlayerName(false)
     } catch (error) {
       setPlayerNameError(error?.message || 'Could not save your nickname.')
@@ -186,6 +188,20 @@ function GameExperience({
       setIsSavingPlayerName(false)
     }
   }
+
+  useEffect(() => {
+    if (!didSavePlayerName) {
+      return undefined
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setDidSavePlayerName(false)
+    }, 2200)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [didSavePlayerName])
 
   return (
       <div className="game-shell">
@@ -219,10 +235,12 @@ function GameExperience({
                 onSelectLevel={goToLevel}
                 isEditingPlayerName={isEditingPlayerName}
                 isSavingPlayerName={isSavingPlayerName}
+                didSavePlayerName={didSavePlayerName}
                 playerNameError={playerNameError}
                 onStartEditingPlayerName={() => {
                   setDraftPlayerName(playerName)
                   setPlayerNameError('')
+                  setDidSavePlayerName(false)
                   setIsEditingPlayerName(true)
                 }}
                 onDraftPlayerNameChange={(nextValue) => {
@@ -230,11 +248,15 @@ function GameExperience({
                   if (playerNameError) {
                     setPlayerNameError('')
                   }
+                  if (didSavePlayerName) {
+                    setDidSavePlayerName(false)
+                  }
                 }}
                 onSavePlayerName={handleSavePlayerName}
                 onCancelEditingPlayerName={() => {
                   setDraftPlayerName(playerName)
                   setPlayerNameError('')
+                  setDidSavePlayerName(false)
                   setIsEditingPlayerName(false)
                 }}
             />
