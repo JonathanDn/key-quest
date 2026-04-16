@@ -12,6 +12,22 @@ import {
 
 const HAPPY_MESSAGES = ['Nice!', 'Yay!', 'Great!', 'Awesome!', 'You got it!']
 
+export function isEditableEventTarget(target) {
+    if (!target || typeof target !== 'object') {
+        return false
+    }
+
+    if (target.isContentEditable) {
+        return true
+    }
+
+    const tagName = typeof target.tagName === 'string'
+        ? target.tagName.toLowerCase()
+        : ''
+
+    return tagName === 'input' || tagName === 'textarea' || tagName === 'select'
+}
+
 function randomPick(list) {
     return list[Math.floor(Math.random() * list.length)]
 }
@@ -105,6 +121,10 @@ export function useTypingGame(
         function onKeyDown(event) {
             const currentSession = sessionRef.current
 
+            if (isEditableEventTarget(event.target)) {
+                return
+            }
+
             if (!currentSession.playerName || inputPausedRef.current) {
                 return
             }
@@ -142,6 +162,10 @@ export function useTypingGame(
 
         function onKeyUp(event) {
             const currentSession = sessionRef.current
+
+            if (isEditableEventTarget(event.target)) {
+                return
+            }
 
             if (!currentSession.playerName || inputPausedRef.current) {
                 return
