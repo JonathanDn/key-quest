@@ -12,6 +12,7 @@
     gap: var(--space-gap-sm);
     flex-wrap: wrap;
     min-height: 0;
+    margin-top: clamp(8px, 1.6vh, 16px);
     transition:
             opacity 0.35s ease,
             transform 0.35s ease,
