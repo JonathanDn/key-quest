@@ -57,7 +57,6 @@ button {
     padding: var(--space-panel);
     display: grid;
     grid-template-rows: auto auto minmax(0, 1fr) auto auto;
-    gap: var(--space-section);
     justify-items: center;
     align-content: start;
     text-align: center;
