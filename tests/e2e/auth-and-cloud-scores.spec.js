@@ -2,12 +2,15 @@ import { test, expect } from '@playwright/test'
 import {
     closeScoreboard,
     completeCurrentLevel,
+    editNicknameInGame,
     makeTestUser,
     openScoreboard,
     readBasicsWorldLevel1BestSeconds,
+    readBasicsWorldLevel1GlobalPreview,
     saveNicknameAndEnterGame,
     signIn,
     signUp,
+    switchScoreboardToGlobal,
     switchScoreboardToMyBests,
     waitForGame,
 } from './keyQuest.helpers'
@@ -96,5 +99,39 @@ test('existing account can sign in again and resume from cloud state', async ({ 
     await switchScoreboardToMyBests(page)
     const pulledBest = await readBasicsWorldLevel1BestSeconds(page)
     expect(pulledBest).toBe(originalBest)
+    await closeScoreboard(page)
+})
+
+test('editing nickname in game updates profile and global best-score nickname', async ({ page }) => {
+    const user = makeTestUser()
+    const renamedNickname = `${user.nickname}-Renamed`
+
+    await signUp(page, user)
+    await saveNicknameAndEnterGame(page, user.nickname)
+    await completeCurrentLevel(page, { stepDelayMs: 200 })
+
+    await openScoreboard(page)
+    await switchScoreboardToGlobal(page)
+    const oldGlobalPreview = await readBasicsWorldLevel1GlobalPreview(page)
+    expect(oldGlobalPreview).toContain(user.nickname)
+    await closeScoreboard(page)
+
+    await editNicknameInGame(page, renamedNickname)
+
+    await openScoreboard(page)
+    await switchScoreboardToGlobal(page)
+    const renamedGlobalPreview = await readBasicsWorldLevel1GlobalPreview(page)
+    expect(renamedGlobalPreview).toContain(renamedNickname)
+    expect(renamedGlobalPreview).not.toContain(user.nickname)
+    await closeScoreboard(page)
+
+    await page.reload()
+    await waitForGame(page)
+    await expect(page.getByText(renamedNickname)).toBeVisible()
+
+    await openScoreboard(page)
+    await switchScoreboardToGlobal(page)
+    const renamedAfterReload = await readBasicsWorldLevel1GlobalPreview(page)
+    expect(renamedAfterReload).toContain(renamedNickname)
     await closeScoreboard(page)
 })

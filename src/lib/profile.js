@@ -20,6 +20,7 @@ export async function getMyProfile(userId) {
 
 export async function saveMyProfile({ userId, nickname }) {
     const normalizedNickname = nickname.trim()
+    const updatedAt = new Date().toISOString()
 
     if (!userId) {
         throw new Error('Missing user id.')
@@ -35,7 +36,7 @@ export async function saveMyProfile({ userId, nickname }) {
             {
                 id: userId,
                 nickname: normalizedNickname,
-                updated_at: new Date().toISOString(),
+                updated_at: updatedAt,
             },
             { onConflict: 'id' },
         )
@@ -46,5 +47,36 @@ export async function saveMyProfile({ userId, nickname }) {
         throw error
     }
 
+    const { error: bestTimesUpdateError } = await supabase
+        .from('user_best_times')
+        .update({
+            nickname: normalizedNickname,
+            updated_at: updatedAt,
+        })
+        .eq('user_id', userId)
+
+    if (bestTimesUpdateError && isMissingNicknameColumnError(bestTimesUpdateError)) {
+        const { error: bestTimesTouchError } = await supabase
+            .from('user_best_times')
+            .update({
+                updated_at: updatedAt,
+            })
+            .eq('user_id', userId)
+
+        if (bestTimesTouchError) {
+            throw bestTimesTouchError
+        }
+    } else if (bestTimesUpdateError) {
+        throw bestTimesUpdateError
+    }
+
     return data
+}
+
+function isMissingNicknameColumnError(error) {
+    const message = `${error?.message ?? ''}`.toLowerCase()
+    return (
+        message.includes("could not find the 'nickname' column") &&
+        message.includes('user_best_times')
+    )
 }

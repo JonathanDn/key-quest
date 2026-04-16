@@ -61,6 +61,15 @@ export async function waitForGame(page) {
     await expect(page.getByRole('button', { name: /leaderboard/i })).toBeVisible()
 }
 
+export async function editNicknameInGame(page, nickname) {
+    await page.getByRole('button', { name: 'Edit' }).click()
+    const nicknameInput = page.getByRole('textbox', { name: 'Nickname' })
+    await expect(nicknameInput).toBeVisible()
+    await nicknameInput.fill(nickname)
+    await page.getByRole('button', { name: 'Save' }).click()
+    await expect(page.getByText(nickname)).toBeVisible()
+}
+
 export async function openScoreboard(page) {
     await page.getByRole('button', { name: /leaderboard/i }).click()
 
@@ -113,6 +122,21 @@ export async function readBasicsWorldLevel1BestSeconds(page) {
     }
 
     return Number(match[1])
+}
+
+export async function readBasicsWorldLevel1GlobalPreview(page) {
+    const dialog = page.locator('.leaderboard-modal')
+    const basicsSection = dialog
+        .locator('.leaderboard-world-section')
+        .filter({ hasText: 'Basics World' })
+        .first()
+
+    const levelOneRow = basicsSection
+        .locator('.leaderboard-level-row')
+        .filter({ hasText: 'Level 1' })
+        .first()
+
+    return (await levelOneRow.locator('.leaderboard-global-static-value').innerText()).trim()
 }
 
 export async function completeCurrentLevel(
