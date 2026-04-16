@@ -64,12 +64,16 @@ export function StageHeader({
                     />
                 </button>
 
-                <div className="mini-pill top-bar-context-pill top-bar-context-stack">
+                <div
+                    className={[
+                        'mini-pill',
+                        'top-bar-context-pill',
+                        'top-bar-context-stack',
+                        isEditingPlayerName ? 'editing' : '',
+                    ].join(' ')}
+                >
                     {isEditingPlayerName ? (
-                        <form
-                            className="top-bar-player-edit-form"
-                            onSubmit={onSavePlayerName}
-                        >
+                        <form className="top-bar-player-edit-form" onSubmit={onSavePlayerName}>
                             <label className="sr-only" htmlFor="in-game-player-name-input">
                                 Nickname
                             </label>
@@ -83,21 +87,23 @@ export function StageHeader({
                                 maxLength={24}
                                 autoFocus
                             />
-                            <button
-                                type="submit"
-                                className="top-bar-player-edit-action"
-                                disabled={isSavingPlayerName}
-                            >
-                                {isSavingPlayerName ? 'Saving…' : 'Save'}
-                            </button>
-                            <button
-                                type="button"
-                                className="top-bar-player-edit-action secondary"
-                                onClick={onCancelEditingPlayerName}
-                                disabled={isSavingPlayerName}
-                            >
-                                Cancel
-                            </button>
+                            <div className="top-bar-player-edit-actions">
+                                <button
+                                    type="submit"
+                                    className="top-bar-player-edit-action"
+                                    disabled={isSavingPlayerName}
+                                >
+                                    {isSavingPlayerName ? 'Saving…' : 'Save'}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="top-bar-player-edit-action secondary"
+                                    onClick={onCancelEditingPlayerName}
+                                    disabled={isSavingPlayerName}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
                         </form>
                     ) : (
                         <div className="top-bar-context-player-row">
