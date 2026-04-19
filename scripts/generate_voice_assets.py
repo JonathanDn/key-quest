@@ -20,45 +20,37 @@ SAMPLE_RATE = 24_000
 MASTER_GAIN = 0.22
 
 SINGLE_KEY_LABELS = {
-    "KeyQ": "Q",
-    "KeyW": "W",
-    "KeyE": "E",
-    "KeyR": "R",
-    "KeyT": "T",
-    "KeyA": "A",
-    "KeyS": "S",
-    "KeyD": "D",
-    "KeyF": "F",
-    "KeyG": "G",
-    "KeyY": "Y",
-    "KeyU": "U",
-    "KeyI": "I",
-    "KeyO": "O",
-    "KeyP": "P",
-    "KeyH": "H",
-    "KeyJ": "J",
-    "KeyK": "K",
-    "KeyL": "L",
+    "KeyQ": "q",
+    "KeyW": "w",
+    "KeyE": "e",
+    "KeyR": "r",
+    "KeyT": "t",
+    "KeyA": "a",
+    "KeyS": "s",
+    "KeyD": "d",
+    "KeyF": "f",
+    "KeyG": "g",
+    "KeyY": "y",
+    "KeyU": "u",
+    "KeyI": "i",
+    "KeyO": "o",
+    "KeyP": "p",
+    "KeyH": "h",
+    "KeyJ": "j",
+    "KeyK": "k",
+    "KeyL": "l",
     "Semicolon": "semicolon",
-    "KeyZ": "Z",
-    "KeyX": "X",
-    "KeyC": "C",
-    "KeyV": "V",
-    "KeyB": "B",
-    "KeyN": "N",
-    "KeyM": "M",
+    "KeyZ": "z",
+    "KeyX": "x",
+    "KeyC": "c",
+    "KeyV": "v",
+    "KeyB": "b",
+    "KeyN": "n",
+    "KeyM": "m",
     "Comma": "comma",
     "Period": "period",
     "Slash": "slash",
     "Space": "space",
-}
-
-SINGLE_KEY_PROMPTS = {
-    "Semicolon": "Press the semicolon key.",
-    "Comma": "Press the comma key.",
-    "Period": "Press the period key.",
-    "Slash": "Press the slash key.",
-    "Space": "Press the space bar.",
 }
 
 PHRASE_TEXT = {
@@ -221,7 +213,7 @@ def generate_with_melo(audio_root: Path, language: str, speaker: str, speed: flo
     speaker_id = model.hps.data.spk2id[speaker]
 
     for code, spoken_label in SINGLE_KEY_LABELS.items():
-        text = SINGLE_KEY_PROMPTS.get(code, f"Press {spoken_label}.")
+        text = f"Press {spoken_label}."
         output_path = audio_root / "single" / f"{code}.wav"
         ensure_parent(output_path)
         model.tts_to_file(text, speaker_id, str(output_path), speed=speed)
