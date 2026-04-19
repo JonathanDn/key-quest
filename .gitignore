@@ -23,6 +23,7 @@ coverage
 .env.*
 !.env.example
 .env.e2e.local
+.venv-melo/
 
 # Editor files
 .vscode/*
