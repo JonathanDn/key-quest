@@ -76,11 +76,18 @@ button {
 .top-bar-left {
     justify-self: start;
     display: inline-flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
     position: relative;
     z-index: 60;
     min-width: 0;
+}
+
+.top-bar-action-stack {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
 }
 
 .top-bar-context-pill {
@@ -289,6 +296,41 @@ button {
     object-fit: contain;
     pointer-events: none;
     user-select: none;
+}
+
+.settings-toggle-icon {
+    font-size: 1.45rem;
+    line-height: 1;
+}
+
+.settings-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 58;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    border-radius: inherit;
+    overflow: hidden;
+    background: rgba(7, 4, 16, 0.52);
+    backdrop-filter: blur(10px);
+}
+
+.settings-modal {
+    width: min(420px, 100%);
+    border-radius: 24px;
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    background: rgba(18, 8, 36, 0.94);
+    box-shadow: 0 24px 52px rgba(0, 0, 0, 0.28);
+    display: grid;
+    gap: 18px;
+    padding: 18px;
+    text-align: left;
+    z-index: 59;
+}
+
+.settings-signout-button {
+    width: 100%;
 }
 
 .action-row {
@@ -849,6 +891,10 @@ button {
     .top-bar-left {
         width: 100%;
         justify-content: center;
+    }
+
+    .settings-backdrop {
+        padding: 16px;
     }
 
     .leaderboard-level-row {
