@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
-Generate V1 voice asset files for the Key Quest runtime audio hooks.
+Generate V1 voice assets for Key Quest.
 
-This generator currently creates deterministic placeholder WAV clips that are
-safe to commit and wire into the app. The file layout matches the runtime
-paths used by `useVoiceCues`.
+Default mode uses MeloTTS for real spoken clips.
+Fallback mode can synthesize deterministic placeholder tones for environments
+where MeloTTS is not installed.
 """
 
 from __future__ import annotations
 
+import argparse
 import math
 import struct
 import wave
@@ -17,17 +18,52 @@ from pathlib import Path
 SAMPLE_RATE = 24_000
 MASTER_GAIN = 0.22
 
-SINGLE_KEY_CODES = [
-    "KeyQ", "KeyW", "KeyE", "KeyR", "KeyT",
-    "KeyA", "KeyS", "KeyD", "KeyF", "KeyG",
-    "KeyY", "KeyU", "KeyI", "KeyO", "KeyP",
-    "KeyH", "KeyJ", "KeyK", "KeyL", "Semicolon",
-    "KeyZ", "KeyX", "KeyC", "KeyV", "KeyB",
-    "KeyN", "KeyM", "Comma", "Period", "Slash",
-    "Space",
-]
+SINGLE_KEY_LABELS = {
+    "KeyQ": "Q",
+    "KeyW": "W",
+    "KeyE": "E",
+    "KeyR": "R",
+    "KeyT": "T",
+    "KeyA": "A",
+    "KeyS": "S",
+    "KeyD": "D",
+    "KeyF": "F",
+    "KeyG": "G",
+    "KeyY": "Y",
+    "KeyU": "U",
+    "KeyI": "I",
+    "KeyO": "O",
+    "KeyP": "P",
+    "KeyH": "H",
+    "KeyJ": "J",
+    "KeyK": "K",
+    "KeyL": "L",
+    "Semicolon": "semicolon",
+    "KeyZ": "Z",
+    "KeyX": "X",
+    "KeyC": "C",
+    "KeyV": "V",
+    "KeyB": "B",
+    "KeyN": "N",
+    "KeyM": "M",
+    "Comma": "comma",
+    "Period": "period",
+    "Slash": "slash",
+    "Space": "space",
+}
 
-PHRASE_CUES = {
+PHRASE_TEXT = {
+    "combo/copy-step": "Copy step. Hold control and press C.",
+    "combo/paste-step": "Paste step. Hold control and press V.",
+    "combo/undo-step": "Undo step. Hold control and press Z.",
+    "combo/combo-step": "Use the combo keys together.",
+    "text/start-cue": "Type this prompt.",
+    "complete/level-complete": "Level complete. Great job!",
+    "complete/world-complete": "World complete. Amazing work!",
+    "complete/game-complete": "You finished Key Quest. Fantastic typing!",
+}
+
+PHRASE_CUE_NOTES = {
     "combo/copy-step": [466.16, 554.37, 659.25],
     "combo/paste-step": [523.25, 659.25, 783.99],
     "combo/undo-step": [659.25, 587.33, 523.25],
@@ -37,6 +73,33 @@ PHRASE_CUES = {
     "complete/world-complete": [392.00, 523.25, 659.25, 783.99, 1046.50],
     "complete/game-complete": [523.25, 659.25, 783.99, 1046.50, 1318.51],
 }
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate Key Quest voice assets.")
+    parser.add_argument(
+        "--engine",
+        choices=["melo", "placeholder"],
+        default="melo",
+        help="Audio generation engine (default: melo).",
+    )
+    parser.add_argument(
+        "--language",
+        default="EN",
+        help="MeloTTS language code (default: EN).",
+    )
+    parser.add_argument(
+        "--speaker",
+        default="EN-US",
+        help="MeloTTS speaker key (default: EN-US).",
+    )
+    parser.add_argument(
+        "--speed",
+        type=float,
+        default=1.0,
+        help="MeloTTS speech speed (default: 1.0).",
+    )
+    return parser.parse_args()
 
 
 def ensure_parent(path: Path) -> None:
@@ -97,11 +160,7 @@ def code_frequency(code: str) -> float:
 
 def build_single_clip(code: str) -> list[float]:
     base = code_frequency(code)
-    return (
-        tone(base, 0.17)
-        + silence(0.05)
-        + tone(base * 1.18, 0.15)
-    )
+    return tone(base, 0.17) + silence(0.05) + tone(base * 1.18, 0.15)
 
 
 def build_phrase_clip(notes: list[float]) -> list[float]:
@@ -115,23 +174,54 @@ def build_phrase_clip(notes: list[float]) -> list[float]:
     return out
 
 
+def generate_with_placeholder(audio_root: Path) -> int:
+    for code in SINGLE_KEY_LABELS:
+        write_wav(audio_root / "single" / f"{code}.wav", build_single_clip(code))
+
+    for relative_key, notes in PHRASE_CUE_NOTES.items():
+        write_wav(audio_root / f"{relative_key}.wav", build_phrase_clip(notes))
+
+    return len(SINGLE_KEY_LABELS) + len(PHRASE_CUE_NOTES)
+
+
+def generate_with_melo(audio_root: Path, language: str, speaker: str, speed: float) -> int:
+    from melo.api import TTS
+
+    model = TTS(language=language, device="auto")
+    speaker_id = model.hps.data.spk2id[speaker]
+
+    for code, spoken_label in SINGLE_KEY_LABELS.items():
+        text = f"Press {spoken_label}."
+        output_path = audio_root / "single" / f"{code}.wav"
+        ensure_parent(output_path)
+        model.tts_to_file(text, speaker_id, str(output_path), speed=speed)
+
+    for relative_key, text in PHRASE_TEXT.items():
+        output_path = audio_root / f"{relative_key}.wav"
+        ensure_parent(output_path)
+        model.tts_to_file(text, speaker_id, str(output_path), speed=speed)
+
+    return len(SINGLE_KEY_LABELS) + len(PHRASE_TEXT)
+
+
 def main() -> None:
+    args = parse_args()
     root = Path(__file__).resolve().parents[1]
     audio_root = root / "public" / "audio" / "voice"
 
-    for code in SINGLE_KEY_CODES:
-        write_wav(
-            audio_root / "single" / f"{code}.wav",
-            build_single_clip(code),
-        )
+    if args.engine == "melo":
+        try:
+            count = generate_with_melo(audio_root, args.language, args.speaker, args.speed)
+            print(f"Generated {count} spoken audio assets in {audio_root}")
+            return
+        except ModuleNotFoundError as error:
+            raise SystemExit(
+                "MeloTTS is not installed. Install dependencies first, or run with "
+                "`--engine placeholder` for non-vocal fallback audio."
+            ) from error
 
-    for relative_key, notes in PHRASE_CUES.items():
-        write_wav(
-            audio_root / f"{relative_key}.wav",
-            build_phrase_clip(notes),
-        )
-
-    print(f"Generated {len(SINGLE_KEY_CODES) + len(PHRASE_CUES)} audio assets in {audio_root}")
+    count = generate_with_placeholder(audio_root)
+    print(f"Generated {count} placeholder audio assets in {audio_root}")
 
 
 if __name__ == "__main__":

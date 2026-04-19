@@ -48,13 +48,23 @@ The game can play static pre-generated voice clips from `public/audio/voice`.
   - `/audio/voice/complete/world-complete.wav`
   - `/audio/voice/complete/game-complete.wav`
 
-Generate the current V1 set with:
+Generate spoken clips with MeloTTS (default):
 
 ```bash
+# one-time setup in your local environment
+pip install "melotts @ git+https://github.com/myshell-ai/MeloTTS.git"
+
+# generate assets
 python scripts/generate_voice_assets.py
 ```
 
-These files are intended to be generated offline (for example via MeloTTS). After generation, test locally and commit the resulting `.wav` files in `public/audio/voice` so production has the assets at deploy time.
+If MeloTTS is unavailable locally, you can still generate non-vocal placeholder tones:
+
+```bash
+python scripts/generate_voice_assets.py --engine placeholder
+```
+
+After generation, test locally and commit the resulting `.wav` files in `public/audio/voice` so production has the assets at deploy time.
 
 ## Feature proposal: "Perfect Type Streak"
 
