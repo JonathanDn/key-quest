@@ -24,12 +24,43 @@ function buildSingleTargetCue(code) {
 
 export function useVoiceCues({
     ui,
+    message,
     progression,
     enabled = true,
 }) {
     const previousTargetIdRef = useRef(null)
     const wasCompleteRef = useRef(false)
     const audioCacheRef = useRef(new Map())
+    const guidanceCueMapRef = useRef(null)
+
+    useEffect(() => {
+        if (!enabled) {
+            return
+        }
+
+        let active = true
+
+        fetch('/audio/voice/guidance/guidance_map.json')
+            .then((response) => {
+                if (!response.ok) {
+                    return null
+                }
+
+                return response.json()
+            })
+            .then((cueMap) => {
+                if (!active || !cueMap || typeof cueMap !== 'object') {
+                    return
+                }
+
+                guidanceCueMapRef.current = cueMap
+            })
+            .catch(() => {})
+
+        return () => {
+            active = false
+        }
+    }, [enabled])
 
     useEffect(() => {
         if (!enabled) {
@@ -60,7 +91,11 @@ export function useVoiceCues({
         }
 
         if (isNewTarget) {
-            if (ui.target.mode === 'single') {
+            const guidanceCue = guidanceCueMapRef.current?.[message]
+
+            if (guidanceCue) {
+                playCue(guidanceCue)
+            } else if (ui.target.mode === 'single') {
                 playCue(buildSingleTargetCue(ui.keyboard.targetCodes?.[0]))
             } else if (ui.target.mode === 'combo') {
                 playCue(
@@ -92,6 +127,7 @@ export function useVoiceCues({
         progression.gameFinished,
         progression.isWorldBoundary,
         ui.keyboard.targetCodes,
+        message,
         ui.queue,
         ui.target.mode,
         ui.wordPower?.powerName,
