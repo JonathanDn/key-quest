@@ -33,6 +33,10 @@ export function StageHeader({
                                 onToggleLeaderboard,
                                 highestUnlockedLevelIndex,
                                 onSelectLevel,
+                                isSettingsOpen,
+                                onToggleSettings,
+                                onCloseSettings,
+                                onSignOut,
                                 isEditingPlayerName,
                                 isSavingPlayerName,
                                 didSavePlayerName,
@@ -45,24 +49,40 @@ export function StageHeader({
     return (
         <div className="top-bar">
             <div className="top-bar-left">
-                <button
-                    type="button"
-                    className={[
-                        'scoreboard-toggle',
-                        isLeaderboardOpen ? 'active' : '',
-                    ].join(' ')}
-                    aria-label={isLeaderboardOpen ? 'Close my leaderboard' : 'Open my leaderboard'}
-                    aria-pressed={isLeaderboardOpen}
-                    onClick={onToggleLeaderboard}
-                >
-                    <img
-                        src={TROPHY_ICON_SRC}
-                        alt=""
-                        className="scoreboard-toggle-icon"
-                        draggable="false"
-                        aria-hidden="true"
-                    />
-                </button>
+                <div className="top-bar-action-stack">
+                    <button
+                        type="button"
+                        className={[
+                            'scoreboard-toggle',
+                            isLeaderboardOpen ? 'active' : '',
+                        ].join(' ')}
+                        aria-label={isLeaderboardOpen ? 'Close my leaderboard' : 'Open my leaderboard'}
+                        aria-pressed={isLeaderboardOpen}
+                        onClick={onToggleLeaderboard}
+                    >
+                        <img
+                            src={TROPHY_ICON_SRC}
+                            alt=""
+                            className="scoreboard-toggle-icon"
+                            draggable="false"
+                            aria-hidden="true"
+                        />
+                    </button>
+
+                    <button
+                        type="button"
+                        className={[
+                            'scoreboard-toggle',
+                            'settings-toggle',
+                            isSettingsOpen ? 'active' : '',
+                        ].join(' ')}
+                        aria-label={isSettingsOpen ? 'Close settings' : 'Open settings'}
+                        aria-pressed={isSettingsOpen}
+                        onClick={onToggleSettings}
+                    >
+                        <span className="settings-toggle-icon" aria-hidden="true">⚙️</span>
+                    </button>
+                </div>
 
                 <div
                     className={[
@@ -276,6 +296,43 @@ export function StageHeader({
                     {bestSuccessStreak > 0 ? ` · Max ${bestSuccessStreak}` : ''}
                 </div>
             </div>
+
+            {isSettingsOpen ? (
+                <div className="settings-backdrop" onClick={onCloseSettings}>
+                    <section
+                        className="settings-modal"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="settings-title"
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <div className="leaderboard-header">
+                            <div className="leaderboard-title-group">
+                                <h2 className="leaderboard-title" id="settings-title">
+                                    Settings
+                                </h2>
+                            </div>
+
+                            <button
+                                type="button"
+                                className="leaderboard-close"
+                                aria-label="Close settings"
+                                onClick={onCloseSettings}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <button
+                            type="button"
+                            className="big-button settings-signout-button"
+                            onClick={onSignOut}
+                        >
+                            Sign out
+                        </button>
+                    </section>
+                </div>
+            ) : null}
         </div>
     )
 }

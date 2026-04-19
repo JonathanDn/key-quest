@@ -20,8 +20,10 @@ function GameExperience({
   userId,
   cloudBestTimes,
   onSavePlayerName,
+  onSignOut,
 }) {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isEditingPlayerName, setIsEditingPlayerName] = useState(false)
   const [draftPlayerName, setDraftPlayerName] = useState(playerName)
   const [playerNameError, setPlayerNameError] = useState('')
@@ -83,12 +85,17 @@ function GameExperience({
   }, [playing, levelIndex, ui.target.mode, isLeaderboardOpen])
 
   useEffect(() => {
-    if (!isLeaderboardOpen) {
+    if (!isLeaderboardOpen && !isSettingsOpen) {
       return undefined
     }
 
     function onKeyDown(event) {
       if (event.key === 'Escape') {
+        if (isSettingsOpen) {
+          setIsSettingsOpen(false)
+          return
+        }
+
         setIsLeaderboardOpen(false)
       }
     }
@@ -98,7 +105,7 @@ function GameExperience({
     return () => {
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [isLeaderboardOpen])
+  }, [isLeaderboardOpen, isSettingsOpen])
 
   useEffect(() => {
     if (!isLeaderboardOpen) {
@@ -173,6 +180,11 @@ function GameExperience({
     setIsLeaderboardOpen((currentValue) => !currentValue)
   }
 
+  async function handleSignOutFromSettings() {
+    await onSignOut()
+    setIsSettingsOpen(false)
+  }
+
   async function handleSavePlayerName(event) {
     event.preventDefault()
 
@@ -233,6 +245,10 @@ function GameExperience({
                 onToggleLeaderboard={toggleLeaderboard}
                 highestUnlockedLevelIndex={highestUnlockedLevelIndex}
                 onSelectLevel={goToLevel}
+                isSettingsOpen={isSettingsOpen}
+                onToggleSettings={() => setIsSettingsOpen((currentValue) => !currentValue)}
+                onCloseSettings={() => setIsSettingsOpen(false)}
+                onSignOut={handleSignOutFromSettings}
                 isEditingPlayerName={isEditingPlayerName}
                 isSavingPlayerName={isSavingPlayerName}
                 didSavePlayerName={didSavePlayerName}
@@ -609,6 +625,7 @@ function App() {
             userId={user?.id ?? null}
             cloudBestTimes={cloudBestTimes}
             onSavePlayerName={persistNickname}
+            onSignOut={handleSignOut}
         />
     )
   }
