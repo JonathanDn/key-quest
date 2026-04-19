@@ -10,6 +10,7 @@ where MeloTTS is not installed.
 from __future__ import annotations
 
 import argparse
+import json
 import math
 import struct
 import wave
@@ -98,6 +99,16 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=1.0,
         help="MeloTTS speech speed (default: 1.0).",
+    )
+    parser.add_argument(
+        "--allow-placeholder",
+        action="store_true",
+        help="Required safety flag when using --engine placeholder.",
+    )
+    parser.add_argument(
+        "--keep-existing",
+        action="store_true",
+        help="Do not remove existing generated .wav files before generation.",
     )
     return parser.parse_args()
 
@@ -204,14 +215,39 @@ def generate_with_melo(audio_root: Path, language: str, speaker: str, speed: flo
     return len(SINGLE_KEY_LABELS) + len(PHRASE_TEXT)
 
 
+def clear_existing_audio(audio_root: Path) -> None:
+    if not audio_root.exists():
+        return
+
+    for wav_file in audio_root.rglob("*.wav"):
+        wav_file.unlink()
+
+
+def write_manifest(audio_root: Path, engine: str, language: str, speaker: str, speed: float) -> None:
+    manifest = {
+        "engine": engine,
+        "language": language,
+        "speaker": speaker,
+        "speed": speed,
+        "single_count": len(SINGLE_KEY_LABELS),
+        "phrase_count": len(PHRASE_TEXT),
+    }
+    ensure_parent(audio_root / "voice_manifest.json")
+    (audio_root / "voice_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+
+
 def main() -> None:
     args = parse_args()
     root = Path(__file__).resolve().parents[1]
     audio_root = root / "public" / "audio" / "voice"
 
+    if not args.keep_existing:
+        clear_existing_audio(audio_root)
+
     if args.engine == "melo":
         try:
             count = generate_with_melo(audio_root, args.language, args.speaker, args.speed)
+            write_manifest(audio_root, "melo", args.language, args.speaker, args.speed)
             print(f"Generated {count} spoken audio assets in {audio_root}")
             return
         except ModuleNotFoundError as error:
@@ -220,7 +256,14 @@ def main() -> None:
                 "`--engine placeholder` for non-vocal fallback audio."
             ) from error
 
+    if not args.allow_placeholder:
+        raise SystemExit(
+            "Placeholder engine requires --allow-placeholder to prevent accidental "
+            "non-vocal generation."
+        )
+
     count = generate_with_placeholder(audio_root)
+    write_manifest(audio_root, "placeholder", args.language, args.speaker, args.speed)
     print(f"Generated {count} placeholder audio assets in {audio_root}")
 
 

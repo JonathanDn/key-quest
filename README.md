@@ -58,10 +58,18 @@ pip install "melotts @ git+https://github.com/myshell-ai/MeloTTS.git"
 python scripts/generate_voice_assets.py
 ```
 
+Confirm spoken generation was used:
+
+```bash
+cat public/audio/voice/voice_manifest.json
+```
+
+It should show `"engine": "melo"`.
+
 If MeloTTS is unavailable locally, you can still generate non-vocal placeholder tones:
 
 ```bash
-python scripts/generate_voice_assets.py --engine placeholder
+python scripts/generate_voice_assets.py --engine placeholder --allow-placeholder
 ```
 
 After generation, test locally and commit the resulting `.wav` files in `public/audio/voice` so production has the assets at deploy time.
