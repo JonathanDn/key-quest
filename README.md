@@ -58,6 +58,8 @@ pip install "melotts @ git+https://github.com/myshell-ai/MeloTTS.git"
 python scripts/generate_voice_assets.py
 ```
 
+The generator uses custom phrasing for punctuation keys (for example: “Press the semicolon key.”) to sound more natural than symbol-only prompts.
+
 Confirm spoken generation was used:
 
 ```bash
