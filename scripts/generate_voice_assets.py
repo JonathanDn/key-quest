@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import struct
 import wave
 from pathlib import Path
@@ -20,37 +21,71 @@ SAMPLE_RATE = 24_000
 MASTER_GAIN = 0.22
 
 SINGLE_KEY_LABELS = {
-    "KeyQ": "q",
-    "KeyW": "w",
-    "KeyE": "e",
-    "KeyR": "r",
-    "KeyT": "t",
-    "KeyA": "a",
-    "KeyS": "s",
-    "KeyD": "d",
-    "KeyF": "f",
-    "KeyG": "g",
-    "KeyY": "y",
-    "KeyU": "u",
-    "KeyI": "i",
-    "KeyO": "o",
-    "KeyP": "p",
-    "KeyH": "h",
-    "KeyJ": "j",
-    "KeyK": "k",
-    "KeyL": "l",
-    "Semicolon": "semicolon",
-    "KeyZ": "z",
-    "KeyX": "x",
-    "KeyC": "c",
-    "KeyV": "v",
-    "KeyB": "b",
-    "KeyN": "n",
-    "KeyM": "m",
-    "Comma": "comma",
-    "Period": "period",
-    "Slash": "slash",
-    "Space": "space",
+    "KeyQ": "Q",
+    "KeyW": "W",
+    "KeyE": "E",
+    "KeyR": "R",
+    "KeyT": "T",
+    "KeyA": "A",
+    "KeyS": "S",
+    "KeyD": "D",
+    "KeyF": "F",
+    "KeyG": "G",
+    "KeyY": "Y",
+    "KeyU": "U",
+    "KeyI": "I",
+    "KeyO": "O",
+    "KeyP": "P",
+    "KeyH": "H",
+    "KeyJ": "J",
+    "KeyK": "K",
+    "KeyL": "L",
+    "Semicolon": ";",
+    "KeyZ": "Z",
+    "KeyX": "X",
+    "KeyC": "C",
+    "KeyV": "V",
+    "KeyB": "B",
+    "KeyN": "N",
+    "KeyM": "M",
+    "Comma": ",",
+    "Period": ".",
+    "Slash": "/",
+    "Space": " ",
+}
+
+US_SAYLIKE_SPELLINGS = {
+    "A": "ay",
+    "B": "bee",
+    "C": "see",
+    "D": "dee",
+    "E": "ee",
+    "F": "ef",
+    "G": "jee",
+    "H": "aych",
+    "I": "eye",
+    "J": "jay",
+    "K": "kay",
+    "L": "el",
+    "M": "em",
+    "N": "en",
+    "O": "oh",
+    "P": "pee",
+    "Q": "cue",
+    "R": "ar",
+    "S": "ess",
+    "T": "tee",
+    "U": "you",
+    "V": "vee",
+    "W": "double you",
+    "X": "ex",
+    "Y": "why",
+    "Z": "zee",
+    ";": "semicolon",
+    ",": "comma",
+    ".": "period",
+    "/": "slash",
+    " ": "space",
 }
 
 PHRASE_TEXT = {
@@ -99,6 +134,16 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=1.0,
         help="MeloTTS speech speed (default: 1.0).",
+    )
+    parser.add_argument(
+        "--pronunciation-mode",
+        choices=["normal", "spell", "auto"],
+        default="auto",
+        help=(
+            "How text is normalized before TTS. "
+            "'normal' keeps original text, 'spell' spells all supported characters, "
+            "and 'auto' spells only code-like text."
+        ),
     )
     parser.add_argument(
         "--allow-placeholder",
@@ -185,6 +230,38 @@ def build_phrase_clip(notes: list[float]) -> list[float]:
     return out
 
 
+def spellout_us(text: str) -> str:
+    tokens = [US_SAYLIKE_SPELLINGS.get(ch.upper(), ch) for ch in text]
+    return ", ".join(tokens)
+
+
+def looks_code_like(text: str) -> bool:
+    if "/" in text or ";" in text:
+        return True
+
+    uppercase_sequences = re.findall(r"\b[A-Z]{2,}\b", text)
+    if uppercase_sequences:
+        return True
+
+    if re.search(r"\b[A-Za-z]\d|\d[A-Za-z]\b", text):
+        return True
+
+    return False
+
+
+def normalize_for_tts(text: str, mode: str) -> str:
+    if mode == "normal":
+        return text
+
+    if mode == "spell":
+        return spellout_us(text)
+
+    if looks_code_like(text):
+        return spellout_us(text)
+
+    return text
+
+
 def generate_with_placeholder(audio_root: Path) -> int:
     for code in SINGLE_KEY_LABELS:
         write_wav(audio_root / "single" / f"{code}.wav", build_single_clip(code))
@@ -195,7 +272,13 @@ def generate_with_placeholder(audio_root: Path) -> int:
     return len(SINGLE_KEY_LABELS) + len(PHRASE_CUE_NOTES)
 
 
-def generate_with_melo(audio_root: Path, language: str, speaker: str, speed: float) -> int:
+def generate_with_melo(
+    audio_root: Path,
+    language: str,
+    speaker: str,
+    speed: float,
+    pronunciation_mode: str,
+) -> int:
     from melo.api import TTS
     import nltk
 
@@ -213,15 +296,17 @@ def generate_with_melo(audio_root: Path, language: str, speaker: str, speed: flo
     speaker_id = model.hps.data.spk2id[speaker]
 
     for code, spoken_label in SINGLE_KEY_LABELS.items():
-        text = f"Press {spoken_label}."
+        spelled = normalize_for_tts(spoken_label, "spell")
+        text = f"Press {spelled}."
         output_path = audio_root / "single" / f"{code}.wav"
         ensure_parent(output_path)
         model.tts_to_file(text, speaker_id, str(output_path), speed=speed)
 
     for relative_key, text in PHRASE_TEXT.items():
+        processed_text = normalize_for_tts(text, pronunciation_mode)
         output_path = audio_root / f"{relative_key}.wav"
         ensure_parent(output_path)
-        model.tts_to_file(text, speaker_id, str(output_path), speed=speed)
+        model.tts_to_file(processed_text, speaker_id, str(output_path), speed=speed)
 
     return len(SINGLE_KEY_LABELS) + len(PHRASE_TEXT)
 
@@ -234,12 +319,20 @@ def clear_existing_audio(audio_root: Path) -> None:
         wav_file.unlink()
 
 
-def write_manifest(audio_root: Path, engine: str, language: str, speaker: str, speed: float) -> None:
+def write_manifest(
+    audio_root: Path,
+    engine: str,
+    language: str,
+    speaker: str,
+    speed: float,
+    pronunciation_mode: str,
+) -> None:
     manifest = {
         "engine": engine,
         "language": language,
         "speaker": speaker,
         "speed": speed,
+        "pronunciation_mode": pronunciation_mode,
         "single_count": len(SINGLE_KEY_LABELS),
         "phrase_count": len(PHRASE_TEXT),
     }
@@ -257,8 +350,21 @@ def main() -> None:
 
     if args.engine == "melo":
         try:
-            count = generate_with_melo(audio_root, args.language, args.speaker, args.speed)
-            write_manifest(audio_root, "melo", args.language, args.speaker, args.speed)
+            count = generate_with_melo(
+                audio_root,
+                args.language,
+                args.speaker,
+                args.speed,
+                args.pronunciation_mode,
+            )
+            write_manifest(
+                audio_root,
+                "melo",
+                args.language,
+                args.speaker,
+                args.speed,
+                args.pronunciation_mode,
+            )
             print(f"Generated {count} spoken audio assets in {audio_root}")
             return
         except ModuleNotFoundError as error:
@@ -292,7 +398,14 @@ def main() -> None:
         )
 
     count = generate_with_placeholder(audio_root)
-    write_manifest(audio_root, "placeholder", args.language, args.speaker, args.speed)
+    write_manifest(
+        audio_root,
+        "placeholder",
+        args.language,
+        args.speaker,
+        args.speed,
+        args.pronunciation_mode,
+    )
     print(f"Generated {count} placeholder audio assets in {audio_root}")
 
 
