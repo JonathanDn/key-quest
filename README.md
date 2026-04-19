@@ -66,6 +66,12 @@ cat public/audio/voice/voice_manifest.json
 
 It should show `"engine": "melo"`.
 
+If generation exits before writing a manifest, verify Melo imports in the same environment:
+
+```bash
+python -c "import melo.api; print('melo import ok')"
+```
+
 If MeloTTS is unavailable locally, you can still generate non-vocal placeholder tones:
 
 ```bash

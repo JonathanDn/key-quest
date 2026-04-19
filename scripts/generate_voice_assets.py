@@ -251,9 +251,19 @@ def main() -> None:
             print(f"Generated {count} spoken audio assets in {audio_root}")
             return
         except ModuleNotFoundError as error:
+            missing_name = getattr(error, "name", None) or "unknown"
+            if missing_name == "melo":
+                raise SystemExit(
+                    "Could not import `melo`. Install MeloTTS in the active environment with:\n"
+                    "  python -m pip install \"melotts @ git+https://github.com/myshell-ai/MeloTTS.git\"\n"
+                    "Then rerun this script."
+                ) from error
+
             raise SystemExit(
-                "MeloTTS is not installed. Install dependencies first, or run with "
-                "`--engine placeholder` for non-vocal fallback audio."
+                "MeloTTS import failed because a dependency is missing.\n"
+                f"Missing module: {missing_name}\n"
+                "Install the missing module in the same environment and rerun, or run\n"
+                "`--engine placeholder --allow-placeholder` for non-vocal fallback audio."
             ) from error
 
     if not args.allow_placeholder:
