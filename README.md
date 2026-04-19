@@ -32,6 +32,30 @@ Then open the local URL printed by Vite.
 - The project uses physical key codes such as `KeyA` and `Semicolon`, which aligns well with finger-training gameplay because physical key positions remain stable across layouts.
 - This is a seed project: the next obvious additions are audio feedback, a richer lesson authoring system, saved progress, and teacher/parent dashboards.
 
+## Voice cues (V1)
+
+The game can play static pre-generated voice clips from `public/audio/voice`.
+
+- Single-key targets: `/audio/voice/single/<KeyCode>.wav` (for example `KeyA.wav`, `Space.wav`)
+- Combo prompts:
+  - `/audio/voice/combo/copy-step.wav`
+  - `/audio/voice/combo/paste-step.wav`
+  - `/audio/voice/combo/undo-step.wav`
+  - optional fallback: `/audio/voice/combo/combo-step.wav`
+- Text-step start cue: `/audio/voice/text/start-cue.wav`
+- Completion cues:
+  - `/audio/voice/complete/level-complete.wav`
+  - `/audio/voice/complete/world-complete.wav`
+  - `/audio/voice/complete/game-complete.wav`
+
+Generate the current V1 set with:
+
+```bash
+python scripts/generate_voice_assets.py
+```
+
+These files are intended to be generated offline (for example via MeloTTS). After generation, test locally and commit the resulting `.wav` files in `public/audio/voice` so production has the assets at deploy time.
+
 ## Feature proposal: "Perfect Type Streak"
 
 ### Problem
