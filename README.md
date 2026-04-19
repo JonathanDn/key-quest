@@ -54,11 +54,15 @@ Generate spoken clips with MeloTTS (default):
 # one-time setup in your local environment
 pip install "melotts @ git+https://github.com/myshell-ai/MeloTTS.git"
 
-# generate assets
-python scripts/generate_voice_assets.py
+# generate assets (auto-detect code-like text and spell those tokens)
+python scripts/generate_voice_assets.py --pronunciation-mode auto
 ```
 
-The generator uses custom phrasing for punctuation keys (for example: “Press the semicolon key.”) to sound more natural than symbol-only prompts.
+Pronunciation modes:
+
+- `--pronunciation-mode normal`: keep phrase text unchanged.
+- `--pronunciation-mode spell`: spell all supported characters using US-style names (for example, `A` → `ay`, `Z` → `zee`, `/` → `slash`).
+- `--pronunciation-mode auto` (default): spell only code-like text (acronyms, slash paths, alpha-numeric tokens), while keeping natural sentence flow for normal phrases.
 
 Confirm spoken generation was used:
 
