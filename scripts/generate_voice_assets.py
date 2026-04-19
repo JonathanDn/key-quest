@@ -259,6 +259,14 @@ def main() -> None:
                     "Then rerun this script."
                 ) from error
 
+            if missing_name == "pkg_resources":
+                raise SystemExit(
+                    "Melo dependency import failed: missing `pkg_resources`.\n"
+                    "Install a setuptools version that still bundles pkg_resources:\n"
+                    "  python -m pip install \"setuptools<81\"\n"
+                    "Then rerun this script."
+                ) from error
+
             raise SystemExit(
                 "MeloTTS import failed because a dependency is missing.\n"
                 f"Missing module: {missing_name}\n"

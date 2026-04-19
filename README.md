@@ -72,6 +72,12 @@ If generation exits before writing a manifest, verify Melo imports in the same e
 python -c "import melo.api; print('melo import ok')"
 ```
 
+If the import fails with `No module named 'pkg_resources'`, pin setuptools:
+
+```bash
+python -m pip install "setuptools<81"
+```
+
 If MeloTTS is unavailable locally, you can still generate non-vocal placeholder tones:
 
 ```bash
