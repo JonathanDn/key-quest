@@ -197,6 +197,17 @@ def generate_with_placeholder(audio_root: Path) -> int:
 
 def generate_with_melo(audio_root: Path, language: str, speaker: str, speed: float) -> int:
     from melo.api import TTS
+    import nltk
+
+    def ensure_nltk_package(resource_path: str, package_name: str) -> None:
+        try:
+            nltk.data.find(resource_path)
+        except LookupError:
+            nltk.download(package_name)
+
+    ensure_nltk_package("taggers/averaged_perceptron_tagger_eng", "averaged_perceptron_tagger_eng")
+    ensure_nltk_package("taggers/averaged_perceptron_tagger", "averaged_perceptron_tagger")
+    ensure_nltk_package("corpora/cmudict", "cmudict")
 
     model = TTS(language=language, device="auto")
     speaker_id = model.hps.data.spk2id[speaker]

@@ -78,6 +78,8 @@ If the import fails with `No module named 'pkg_resources'`, pin setuptools:
 python -m pip install "setuptools<81"
 ```
 
+The generator now auto-downloads required NLTK data (`averaged_perceptron_tagger_eng`, `averaged_perceptron_tagger`, `cmudict`) if missing.
+
 If MeloTTS is unavailable locally, you can still generate non-vocal placeholder tones:
 
 ```bash
