@@ -15,6 +15,7 @@ import math
 import re
 import struct
 import hashlib
+import subprocess
 import wave
 from pathlib import Path
 
@@ -111,13 +112,7 @@ PHRASE_CUE_NOTES = {
     "complete/game-complete": [523.25, 659.25, 783.99, 1046.50, 1318.51],
 }
 
-LEVELS_FILE = Path("src/game/content/levels.js")
-
-DISPLAY_LABELS_BY_CODE = {
-    "ControlLeft": "CTRL",
-    "Space": "SPACE",
-    **{code: label for code, label in SINGLE_KEY_LABELS.items() if code != "Space"},
-}
+GUIDANCE_TEXT_EXPORT_SCRIPT = Path("scripts/export_guidance_texts.mjs")
 
 
 def parse_args() -> argparse.Namespace:
@@ -338,35 +333,26 @@ def sanitize_guidance_filename(text: str) -> str:
     return f"{slug}-{digest}"
 
 
-def extract_quoted_strings(block: str) -> list[str]:
-    return re.findall(r"'([^']+)'", block)
-
-
 def collect_guidance_row_texts(project_root: Path) -> list[str]:
-    levels_path = project_root / LEVELS_FILE
-    levels_source = levels_path.read_text(encoding="utf-8")
-    texts: set[str] = {"Watch the glowing key"}
+    script_path = project_root / GUIDANCE_TEXT_EXPORT_SCRIPT
+    result = subprocess.run(
+        ["node", str(script_path)],
+        cwd=project_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
 
-    for code, display_label in DISPLAY_LABELS_BY_CODE.items():
-        if code == "ControlLeft":
-            continue
-        texts.add(f"Tap {display_label}")
-        texts.add(f"Try {display_label}")
+    parsed_texts = json.loads(result.stdout)
+    if not isinstance(parsed_texts, list):
+        raise ValueError("Guidance text export must output a JSON list.")
 
-    for combo_text in re.findall(r"(?:helper|label):\s*'([^']+)'", levels_source):
-        if combo_text.startswith("Copy ") or combo_text.startswith("Paste ") or combo_text.startswith("Undo "):
-            continue
-        texts.add(combo_text)
-        texts.add(f"Try {combo_text}")
+    guidance_texts: list[str] = []
+    for entry in parsed_texts:
+        if isinstance(entry, str) and entry.strip():
+            guidance_texts.append(entry.strip())
 
-    for task_label in re.findall(r"taskLabel:\s*'([^']+)'", levels_source):
-        texts.add(task_label)
-
-    for prompt_pool_match in re.findall(r"promptPool:\s*\[(.*?)\]", levels_source, flags=re.DOTALL):
-        for prompt_text in extract_quoted_strings(prompt_pool_match):
-            texts.add(f'Type "{prompt_text}"')
-
-    return sorted(texts)
+    return sorted(set(guidance_texts))
 
 
 def write_guidance_manifest(audio_root: Path, mapping: dict[str, str]) -> None:
