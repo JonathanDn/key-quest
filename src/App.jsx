@@ -147,6 +147,7 @@ function GameExperience({
 
   useVoiceCues({
     ui,
+    message,
     progression,
   })
 

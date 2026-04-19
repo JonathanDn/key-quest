@@ -14,6 +14,8 @@ import json
 import math
 import re
 import struct
+import hashlib
+import subprocess
 import wave
 from pathlib import Path
 
@@ -109,6 +111,8 @@ PHRASE_CUE_NOTES = {
     "complete/world-complete": [392.00, 523.25, 659.25, 783.99, 1046.50],
     "complete/game-complete": [523.25, 659.25, 783.99, 1046.50, 1318.51],
 }
+
+GUIDANCE_TEXT_EXPORT_SCRIPT = Path("scripts/export_guidance_texts.mjs")
 
 
 def parse_args() -> argparse.Namespace:
@@ -263,13 +267,15 @@ def normalize_for_tts(text: str, mode: str) -> str:
 
 
 def generate_with_placeholder(audio_root: Path) -> int:
+    guidance_count = generate_guidance_rows_with_placeholder(audio_root)
+
     for code in SINGLE_KEY_LABELS:
         write_wav(audio_root / "single" / f"{code}.wav", build_single_clip(code))
 
     for relative_key, notes in PHRASE_CUE_NOTES.items():
         write_wav(audio_root / f"{relative_key}.wav", build_phrase_clip(notes))
 
-    return len(SINGLE_KEY_LABELS) + len(PHRASE_CUE_NOTES)
+    return len(SINGLE_KEY_LABELS) + len(PHRASE_CUE_NOTES) + guidance_count
 
 
 def generate_with_melo(
@@ -295,6 +301,14 @@ def generate_with_melo(
     model = TTS(language=language, device="auto")
     speaker_id = model.hps.data.spk2id[speaker]
 
+    guidance_count = generate_guidance_rows_with_melo(
+        model=model,
+        speaker_id=speaker_id,
+        speed=speed,
+        pronunciation_mode=pronunciation_mode,
+        audio_root=audio_root,
+    )
+
     for code, spoken_label in SINGLE_KEY_LABELS.items():
         spelled = normalize_for_tts(spoken_label, "spell")
         text = f"Press {spelled}."
@@ -308,7 +322,85 @@ def generate_with_melo(
         ensure_parent(output_path)
         model.tts_to_file(processed_text, speaker_id, str(output_path), speed=speed)
 
-    return len(SINGLE_KEY_LABELS) + len(PHRASE_TEXT)
+    return len(SINGLE_KEY_LABELS) + len(PHRASE_TEXT) + guidance_count
+
+
+def sanitize_guidance_filename(text: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+    digest = hashlib.sha1(text.encode("utf-8")).hexdigest()[:8]
+    if not slug:
+        slug = "guidance"
+    return f"{slug}-{digest}"
+
+
+def collect_guidance_row_texts(project_root: Path) -> list[str]:
+    script_path = project_root / GUIDANCE_TEXT_EXPORT_SCRIPT
+    result = subprocess.run(
+        ["node", str(script_path)],
+        cwd=project_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    parsed_texts = json.loads(result.stdout)
+    if not isinstance(parsed_texts, list):
+        raise ValueError("Guidance text export must output a JSON list.")
+
+    guidance_texts: list[str] = []
+    for entry in parsed_texts:
+        if isinstance(entry, str) and entry.strip():
+            guidance_texts.append(entry.strip())
+
+    return sorted(set(guidance_texts))
+
+
+def write_guidance_manifest(audio_root: Path, mapping: dict[str, str]) -> None:
+    path = audio_root / "guidance" / "guidance_map.json"
+    ensure_parent(path)
+    path.write_text(json.dumps(mapping, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def generate_guidance_rows_with_placeholder(audio_root: Path) -> int:
+    project_root = Path(__file__).resolve().parents[1]
+    guidance_texts = collect_guidance_row_texts(project_root)
+    mapping: dict[str, str] = {}
+
+    for idx, text in enumerate(guidance_texts):
+        key = sanitize_guidance_filename(text)
+        relative_path = f"guidance/{key}.wav"
+        base_note = 380.0 + ((idx * 23) % 17) * 19.0
+        clip = build_phrase_clip([base_note, base_note * 1.2, base_note * 1.33])
+        write_wav(audio_root / f"{relative_path}", clip)
+        mapping[text] = f"/audio/voice/{relative_path}"
+
+    write_guidance_manifest(audio_root, mapping)
+    return len(guidance_texts)
+
+
+def generate_guidance_rows_with_melo(
+    *,
+    model,
+    speaker_id: int,
+    speed: float,
+    pronunciation_mode: str,
+    audio_root: Path,
+) -> int:
+    project_root = Path(__file__).resolve().parents[1]
+    guidance_texts = collect_guidance_row_texts(project_root)
+    mapping: dict[str, str] = {}
+
+    for text in guidance_texts:
+        key = sanitize_guidance_filename(text)
+        relative_path = f"guidance/{key}.wav"
+        output_path = audio_root / relative_path
+        ensure_parent(output_path)
+        processed_text = normalize_for_tts(text, pronunciation_mode)
+        model.tts_to_file(processed_text, speaker_id, str(output_path), speed=speed)
+        mapping[text] = f"/audio/voice/{relative_path}"
+
+    write_guidance_manifest(audio_root, mapping)
+    return len(guidance_texts)
 
 
 def clear_existing_audio(audio_root: Path) -> None:
@@ -327,6 +419,8 @@ def write_manifest(
     speed: float,
     pronunciation_mode: str,
 ) -> None:
+    project_root = Path(__file__).resolve().parents[1]
+    guidance_count = len(collect_guidance_row_texts(project_root))
     manifest = {
         "engine": engine,
         "language": language,
@@ -335,6 +429,7 @@ def write_manifest(
         "pronunciation_mode": pronunciation_mode,
         "single_count": len(SINGLE_KEY_LABELS),
         "phrase_count": len(PHRASE_TEXT),
+        "guidance_count": guidance_count,
     }
     ensure_parent(audio_root / "voice_manifest.json")
     (audio_root / "voice_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
