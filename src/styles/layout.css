@@ -310,7 +310,7 @@ button {
     display: grid;
     place-items: center;
     padding: 24px;
-    border-radius: inherit;
+    border-radius: var(--radius-panel);
     overflow: hidden;
     background: rgba(7, 4, 16, 0.52);
     backdrop-filter: blur(10px);
