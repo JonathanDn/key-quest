@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useBestTimeSync } from './hooks/useBestTimeSync'
 import { useTypingGame } from './hooks/useTypingGame'
 import { useStageEffects } from './hooks/useStageEffects'
+import { useVoiceCues } from './hooks/useVoiceCues'
 import { useSupabaseAuth } from './hooks/useSupabaseAuth'
 import { useGlobalLeaderboardPreload } from './hooks/useGlobalLeaderboardPreload'
 import { getMyProfile, saveMyProfile } from './lib/profile'
@@ -142,6 +143,11 @@ function GameExperience({
     starCounterRef,
     worldBadgeRefs,
     levelNodeRefs,
+  })
+
+  useVoiceCues({
+    ui,
+    progression,
   })
 
   const showNextButton =

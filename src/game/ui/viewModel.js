@@ -113,6 +113,7 @@ function buildWordPowerView(level, currentTarget, stageState) {
 
     return {
         show: showWordPowerBoard,
+        powerName: wordPowerAction,
         taskLabel: stageState?.taskLabel ?? '',
         actionLabel: getTargetLabel(currentTarget),
         sourceText: stageState?.sourceText ?? '',
