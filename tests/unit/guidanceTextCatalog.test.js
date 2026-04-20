@@ -7,7 +7,7 @@ describe('collectGuidanceRowTexts', () => {
 
         expect(texts).toContain('Tap J')
         expect(texts).toContain('Tap C')
-        expect(texts).toContain('Type "cat"')
+        expect(texts).toContain('Type cat')
         expect(texts).toContain('Try J')
         expect(texts).toContain('Try CTRL + C')
     })
