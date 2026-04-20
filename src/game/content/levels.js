@@ -1,3 +1,5 @@
+import { PROMPT_POOLS, WORD_POWER_MISSION_STEPS } from './guidanceConfig.js'
+
 const HOME_KEYS = ['KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyJ', 'KeyK', 'KeyL', 'Semicolon']
 const SPACE_KEY = ['Space']
 
@@ -52,6 +54,24 @@ const UNDO_POWER_TARGET = {
     shortLabel: 'CTRL+Z',
     helper: 'Hold Ctrl + Z',
     powerName: 'Undo Power',
+}
+
+const WORD_POWER_TARGET_BY_ACTION = {
+    copy: COPY_POWER_TARGET,
+    paste: PASTE_POWER_TARGET,
+    undo: UNDO_POWER_TARGET,
+}
+
+function buildWordPowerMissions(sequenceKey) {
+    return WORD_POWER_MISSION_STEPS[sequenceKey].map((step) => ({
+        ...WORD_POWER_TARGET_BY_ACTION[step.action],
+        taskLabel: step.taskLabel,
+        sourceText: step.sourceText,
+        clipboardText: step.clipboardText,
+        targetText: step.targetText,
+        successMessage: step.successMessage,
+        afterState: step.afterState,
+    }))
 }
 
 export const INITIAL_LEVEL_INDEX = 0
@@ -156,7 +176,7 @@ export const LEVELS = [
         title: 'Tiny Words',
         challenge: 'Read and type tiny words',
         keys: [...FULL_ALPHA_KEYS, ...SPACE_KEY],
-        promptPool: ['cat', 'dog', 'sun', 'map', 'run', 'hat', 'jam', 'box'],
+        promptPool: PROMPT_POOLS.wordSprouts,
         promptCount: 5,
     },
     {
@@ -166,7 +186,7 @@ export const LEVELS = [
         title: 'Space Words',
         challenge: 'Type two-word phrases',
         keys: [...FULL_ALPHA_KEYS, ...SPACE_KEY],
-        promptPool: ['red sun', 'big dog', 'fun run', 'hot jam', 'mad cat', 'run fast'],
+        promptPool: PROMPT_POOLS.spaceBuilder,
         promptCount: 4,
     },
     {
@@ -176,7 +196,7 @@ export const LEVELS = [
         title: 'Fast Words',
         challenge: 'Type short real words faster',
         keys: [...FULL_ALPHA_KEYS, ...SPACE_KEY],
-        promptPool: ['jump', 'rocket', 'planet', 'animal', 'yellow', 'window'],
+        promptPool: PROMPT_POOLS.fastFingers,
         promptCount: 4,
     },
     {
@@ -186,7 +206,7 @@ export const LEVELS = [
         title: 'Tricky Words',
         challenge: 'Practice harder words and jumps',
         keys: [...FULL_ALPHA_KEYS, ...SPACE_KEY],
-        promptPool: ['quick fox', 'puzzle box', 'vivid planet', 'jump high', 'magic rabbit'],
+        promptPool: PROMPT_POOLS.trickyMix,
         promptCount: 4,
     },
     {
@@ -196,13 +216,7 @@ export const LEVELS = [
         title: 'Story Time',
         challenge: 'Type short phrases and sentences',
         keys: [...FULL_ALPHA_KEYS, ...SPACE_KEY],
-        promptPool: [
-            'the cat can run',
-            'we jump in the sun',
-            'the rabbit is quick',
-            'you can do it',
-            'the dog is my pal',
-        ],
+        promptPool: PROMPT_POOLS.storyTrail,
         promptCount: 3,
     },
 
@@ -277,44 +291,7 @@ export const LEVELS = [
         challenge: 'Copy and paste whole words',
         playMode: 'wordPowers',
         keys: ['ControlLeft', 'KeyC', 'KeyV'],
-        missions: [
-            {
-                ...COPY_POWER_TARGET,
-                taskLabel: 'Copy "cat"',
-                sourceText: 'cat',
-                clipboardText: '',
-                targetText: '',
-                successMessage: 'Copied "cat"!',
-                afterState: { sourceText: 'cat', clipboardText: 'cat', targetText: '' },
-            },
-            {
-                ...PASTE_POWER_TARGET,
-                taskLabel: 'Paste "cat"',
-                sourceText: 'cat',
-                clipboardText: 'cat',
-                targetText: '',
-                successMessage: 'Pasted "cat"!',
-                afterState: { sourceText: 'cat', clipboardText: 'cat', targetText: 'cat' },
-            },
-            {
-                ...COPY_POWER_TARGET,
-                taskLabel: 'Copy "sun"',
-                sourceText: 'sun',
-                clipboardText: 'cat',
-                targetText: 'cat',
-                successMessage: 'Copied "sun"!',
-                afterState: { sourceText: 'sun', clipboardText: 'sun', targetText: 'cat' },
-            },
-            {
-                ...PASTE_POWER_TARGET,
-                taskLabel: 'Paste "sun"',
-                sourceText: 'sun',
-                clipboardText: 'sun',
-                targetText: 'cat',
-                successMessage: 'Pasted "sun"!',
-                afterState: { sourceText: 'sun', clipboardText: 'sun', targetText: 'cat sun' },
-            },
-        ],
+        missions: buildWordPowerMissions('wordPowerCopyPaste'),
     },
     {
         id: 'word-power-letters',
@@ -324,44 +301,7 @@ export const LEVELS = [
         challenge: 'Copy and paste characters',
         playMode: 'wordPowers',
         keys: ['ControlLeft', 'KeyC', 'KeyV'],
-        missions: [
-            {
-                ...COPY_POWER_TARGET,
-                taskLabel: 'Copy "A"',
-                sourceText: 'A',
-                clipboardText: '',
-                targetText: '',
-                successMessage: 'Copied "A"!',
-                afterState: { sourceText: 'A', clipboardText: 'A', targetText: '' },
-            },
-            {
-                ...PASTE_POWER_TARGET,
-                taskLabel: 'Paste "A"',
-                sourceText: 'A',
-                clipboardText: 'A',
-                targetText: '',
-                successMessage: 'Pasted "A"!',
-                afterState: { sourceText: 'A', clipboardText: 'A', targetText: 'A' },
-            },
-            {
-                ...COPY_POWER_TARGET,
-                taskLabel: 'Copy "T"',
-                sourceText: 'T',
-                clipboardText: 'A',
-                targetText: 'A',
-                successMessage: 'Copied "T"!',
-                afterState: { sourceText: 'T', clipboardText: 'T', targetText: 'A' },
-            },
-            {
-                ...PASTE_POWER_TARGET,
-                taskLabel: 'Paste "T"',
-                sourceText: 'T',
-                clipboardText: 'T',
-                targetText: 'A',
-                successMessage: 'Pasted "T"!',
-                afterState: { sourceText: 'T', clipboardText: 'T', targetText: 'AT' },
-            },
-        ],
+        missions: buildWordPowerMissions('wordPowerLetters'),
     },
     {
         id: 'word-power-finish-word',
@@ -371,44 +311,7 @@ export const LEVELS = [
         challenge: 'Use copy and paste to finish words',
         playMode: 'wordPowers',
         keys: ['ControlLeft', 'KeyC', 'KeyV'],
-        missions: [
-            {
-                ...COPY_POWER_TARGET,
-                taskLabel: 'Copy "t"',
-                sourceText: 't',
-                clipboardText: '',
-                targetText: 'ca',
-                successMessage: 'Copied "t"!',
-                afterState: { sourceText: 't', clipboardText: 't', targetText: 'ca' },
-            },
-            {
-                ...PASTE_POWER_TARGET,
-                taskLabel: 'Paste to make "cat"',
-                sourceText: 't',
-                clipboardText: 't',
-                targetText: 'ca',
-                successMessage: 'Made "cat"!',
-                afterState: { sourceText: 't', clipboardText: 't', targetText: 'cat' },
-            },
-            {
-                ...COPY_POWER_TARGET,
-                taskLabel: 'Copy "s"',
-                sourceText: 's',
-                clipboardText: 't',
-                targetText: 'cat',
-                successMessage: 'Copied "s"!',
-                afterState: { sourceText: 's', clipboardText: 's', targetText: 'cat' },
-            },
-            {
-                ...PASTE_POWER_TARGET,
-                taskLabel: 'Paste to make "cats"',
-                sourceText: 's',
-                clipboardText: 's',
-                targetText: 'cat',
-                successMessage: 'Made "cats"!',
-                afterState: { sourceText: 's', clipboardText: 's', targetText: 'cats' },
-            },
-        ],
+        missions: buildWordPowerMissions('wordPowerFinishWord'),
     },
     {
         id: 'word-power-undo',
@@ -418,53 +321,7 @@ export const LEVELS = [
         challenge: 'Fix mistakes with undo',
         playMode: 'wordPowers',
         keys: ['ControlLeft', 'KeyC', 'KeyV', 'KeyZ'],
-        missions: [
-            {
-                ...COPY_POWER_TARGET,
-                taskLabel: 'Copy "dog"',
-                sourceText: 'dog',
-                clipboardText: '',
-                targetText: '',
-                successMessage: 'Copied "dog"!',
-                afterState: { sourceText: 'dog', clipboardText: 'dog', targetText: '' },
-            },
-            {
-                ...PASTE_POWER_TARGET,
-                taskLabel: 'Paste "dog"',
-                sourceText: 'dog',
-                clipboardText: 'dog',
-                targetText: '',
-                successMessage: 'Pasted "dog"!',
-                afterState: { sourceText: 'dog', clipboardText: 'dog', targetText: 'dog' },
-            },
-            {
-                ...UNDO_POWER_TARGET,
-                taskLabel: 'Undo the mistake',
-                sourceText: 'dog',
-                clipboardText: 'dog',
-                targetText: 'dog',
-                successMessage: 'Undid it!',
-                afterState: { sourceText: 'cat', clipboardText: 'dog', targetText: '' },
-            },
-            {
-                ...COPY_POWER_TARGET,
-                taskLabel: 'Copy "cat"',
-                sourceText: 'cat',
-                clipboardText: 'dog',
-                targetText: '',
-                successMessage: 'Copied "cat"!',
-                afterState: { sourceText: 'cat', clipboardText: 'cat', targetText: '' },
-            },
-            {
-                ...PASTE_POWER_TARGET,
-                taskLabel: 'Paste "cat"',
-                sourceText: 'cat',
-                clipboardText: 'cat',
-                targetText: '',
-                successMessage: 'Fixed it!',
-                afterState: { sourceText: 'cat', clipboardText: 'cat', targetText: 'cat' },
-            },
-        ],
+        missions: buildWordPowerMissions('wordPowerUndo'),
     },
     {
         id: 'word-power-phrase-builder',
@@ -474,61 +331,6 @@ export const LEVELS = [
         challenge: 'Build a whole phrase with word powers',
         playMode: 'wordPowers',
         keys: ['ControlLeft', 'KeyC', 'KeyV'],
-        missions: [
-            {
-                ...COPY_POWER_TARGET,
-                taskLabel: 'Copy "big"',
-                sourceText: 'big',
-                clipboardText: '',
-                targetText: '',
-                successMessage: 'Copied "big"!',
-                afterState: { sourceText: 'big', clipboardText: 'big', targetText: '' },
-            },
-            {
-                ...PASTE_POWER_TARGET,
-                taskLabel: 'Paste "big"',
-                sourceText: 'big',
-                clipboardText: 'big',
-                targetText: '',
-                successMessage: 'Pasted "big"!',
-                afterState: { sourceText: 'big', clipboardText: 'big', targetText: 'big' },
-            },
-            {
-                ...COPY_POWER_TARGET,
-                taskLabel: 'Copy "red"',
-                sourceText: 'red',
-                clipboardText: 'big',
-                targetText: 'big',
-                successMessage: 'Copied "red"!',
-                afterState: { sourceText: 'red', clipboardText: 'red', targetText: 'big' },
-            },
-            {
-                ...PASTE_POWER_TARGET,
-                taskLabel: 'Paste "red"',
-                sourceText: 'red',
-                clipboardText: 'red',
-                targetText: 'big',
-                successMessage: 'Pasted "red"!',
-                afterState: { sourceText: 'red', clipboardText: 'red', targetText: 'big red' },
-            },
-            {
-                ...COPY_POWER_TARGET,
-                taskLabel: 'Copy "dog"',
-                sourceText: 'dog',
-                clipboardText: 'red',
-                targetText: 'big red',
-                successMessage: 'Copied "dog"!',
-                afterState: { sourceText: 'dog', clipboardText: 'dog', targetText: 'big red' },
-            },
-            {
-                ...PASTE_POWER_TARGET,
-                taskLabel: 'Paste "dog"',
-                sourceText: 'dog',
-                clipboardText: 'dog',
-                targetText: 'big red',
-                successMessage: 'Built the phrase!',
-                afterState: { sourceText: 'dog', clipboardText: 'dog', targetText: 'big red dog' },
-            },
-        ],
+        missions: buildWordPowerMissions('wordPowerPhraseBuilder'),
     },
 ]

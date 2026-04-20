@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import re
 import struct
 import hashlib
@@ -21,40 +22,7 @@ from pathlib import Path
 
 SAMPLE_RATE = 24_000
 MASTER_GAIN = 0.22
-
-SINGLE_KEY_LABELS = {
-    "KeyQ": "Q",
-    "KeyW": "W",
-    "KeyE": "E",
-    "KeyR": "R",
-    "KeyT": "T",
-    "KeyA": "A",
-    "KeyS": "S",
-    "KeyD": "D",
-    "KeyF": "F",
-    "KeyG": "G",
-    "KeyY": "Y",
-    "KeyU": "U",
-    "KeyI": "I",
-    "KeyO": "O",
-    "KeyP": "P",
-    "KeyH": "H",
-    "KeyJ": "J",
-    "KeyK": "K",
-    "KeyL": "L",
-    "Semicolon": ";",
-    "KeyZ": "Z",
-    "KeyX": "X",
-    "KeyC": "C",
-    "KeyV": "V",
-    "KeyB": "B",
-    "KeyN": "N",
-    "KeyM": "M",
-    "Comma": ",",
-    "Period": ".",
-    "Slash": "/",
-    "Space": " ",
-}
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 
 US_SAYLIKE_SPELLINGS = {
     "A": "ay",
@@ -90,17 +58,6 @@ US_SAYLIKE_SPELLINGS = {
     " ": "space",
 }
 
-PHRASE_TEXT = {
-    "combo/copy-step": "Copy step. Hold control and press C.",
-    "combo/paste-step": "Paste step. Hold control and press V.",
-    "combo/undo-step": "Undo step. Hold control and press Z.",
-    "combo/combo-step": "Use the combo keys together.",
-    "text/start-cue": "Type this prompt.",
-    "complete/level-complete": "Level complete. Great job!",
-    "complete/world-complete": "World complete. Amazing work!",
-    "complete/game-complete": "You finished Key Quest. Fantastic typing!",
-}
-
 PHRASE_CUE_NOTES = {
     "combo/copy-step": [466.16, 554.37, 659.25],
     "combo/paste-step": [523.25, 659.25, 783.99],
@@ -113,6 +70,7 @@ PHRASE_CUE_NOTES = {
 }
 
 GUIDANCE_TEXT_EXPORT_SCRIPT = Path("scripts/export_guidance_texts.mjs")
+VOICE_TEXT_CONFIG_EXPORT_SCRIPT = Path("scripts/export_voice_text_config.mjs")
 
 
 def parse_args() -> argparse.Namespace:
@@ -267,15 +225,18 @@ def normalize_for_tts(text: str, mode: str) -> str:
 
 
 def generate_with_placeholder(audio_root: Path) -> int:
+    project_root = Path(__file__).resolve().parents[1]
+    single_key_labels, phrase_text = load_voice_text_config(project_root)
     guidance_count = generate_guidance_rows_with_placeholder(audio_root)
 
-    for code in SINGLE_KEY_LABELS:
+    for code in single_key_labels:
         write_wav(audio_root / "single" / f"{code}.wav", build_single_clip(code))
 
-    for relative_key, notes in PHRASE_CUE_NOTES.items():
+    for relative_key in phrase_text:
+        notes = PHRASE_CUE_NOTES.get(relative_key, PHRASE_CUE_NOTES["combo/combo-step"])
         write_wav(audio_root / f"{relative_key}.wav", build_phrase_clip(notes))
 
-    return len(SINGLE_KEY_LABELS) + len(PHRASE_CUE_NOTES) + guidance_count
+    return len(single_key_labels) + len(phrase_text) + guidance_count
 
 
 def generate_with_melo(
@@ -301,6 +262,8 @@ def generate_with_melo(
     model = TTS(language=language, device="auto")
     speaker_id = model.hps.data.spk2id[speaker]
 
+    project_root = Path(__file__).resolve().parents[1]
+    single_key_labels, phrase_text = load_voice_text_config(project_root)
     guidance_count = generate_guidance_rows_with_melo(
         model=model,
         speaker_id=speaker_id,
@@ -309,20 +272,20 @@ def generate_with_melo(
         audio_root=audio_root,
     )
 
-    for code, spoken_label in SINGLE_KEY_LABELS.items():
+    for code, spoken_label in single_key_labels.items():
         spelled = normalize_for_tts(spoken_label, "spell")
         text = f"Press {spelled}."
         output_path = audio_root / "single" / f"{code}.wav"
         ensure_parent(output_path)
         model.tts_to_file(text, speaker_id, str(output_path), speed=speed)
 
-    for relative_key, text in PHRASE_TEXT.items():
+    for relative_key, text in phrase_text.items():
         processed_text = normalize_for_tts(text, pronunciation_mode)
         output_path = audio_root / f"{relative_key}.wav"
         ensure_parent(output_path)
         model.tts_to_file(processed_text, speaker_id, str(output_path), speed=speed)
 
-    return len(SINGLE_KEY_LABELS) + len(PHRASE_TEXT) + guidance_count
+    return len(single_key_labels) + len(phrase_text) + guidance_count
 
 
 def sanitize_guidance_filename(text: str) -> str:
@@ -353,6 +316,28 @@ def collect_guidance_row_texts(project_root: Path) -> list[str]:
             guidance_texts.append(entry.strip())
 
     return sorted(set(guidance_texts))
+
+
+def load_voice_text_config(project_root: Path) -> tuple[dict[str, str], dict[str, str]]:
+    script_path = project_root / VOICE_TEXT_CONFIG_EXPORT_SCRIPT
+    result = subprocess.run(
+        ["node", str(script_path)],
+        cwd=project_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    parsed = json.loads(result.stdout)
+    if not isinstance(parsed, dict):
+        raise ValueError("Voice text config export must output a JSON object.")
+
+    phrase_text = parsed.get("phraseCueText")
+    single_key_labels = parsed.get("singleKeyLabels")
+    if not isinstance(phrase_text, dict) or not isinstance(single_key_labels, dict):
+        raise ValueError("Voice text config export must include phraseCueText and singleKeyLabels objects.")
+
+    return single_key_labels, phrase_text
 
 
 def write_guidance_manifest(audio_root: Path, mapping: dict[str, str]) -> None:
@@ -421,14 +406,15 @@ def write_manifest(
 ) -> None:
     project_root = Path(__file__).resolve().parents[1]
     guidance_count = len(collect_guidance_row_texts(project_root))
+    single_key_labels, phrase_text = load_voice_text_config(project_root)
     manifest = {
         "engine": engine,
         "language": language,
         "speaker": speaker,
         "speed": speed,
         "pronunciation_mode": pronunciation_mode,
-        "single_count": len(SINGLE_KEY_LABELS),
-        "phrase_count": len(PHRASE_TEXT),
+        "single_count": len(single_key_labels),
+        "phrase_count": len(phrase_text),
         "guidance_count": guidance_count,
     }
     ensure_parent(audio_root / "voice_manifest.json")
