@@ -47,6 +47,12 @@ export function StageHeader({
                                 onSavePlayerName,
                                 onCancelEditingPlayerName,
                             }) {
+    const levelsLeft = Math.max(levels.length - (levelIndex + 1), 0)
+    const worldsLeft = Math.max(WORLD_META.length - currentWorld, 0)
+    const remainingSummary = gameFinished
+        ? 'Everything cleared 🎉'
+        : `${worldsLeft} world${worldsLeft === 1 ? '' : 's'} left · ${levelsLeft} level${levelsLeft === 1 ? '' : 's'} left`
+
     return (
         <div className="top-bar">
             <div className="top-bar-left">
@@ -161,7 +167,7 @@ export function StageHeader({
                         {level.title} · World {currentWorld}/{WORLD_META.length} · Level {currentLevelInWorld}/{currentWorldLevels.length}
                     </span>
                     <span className="top-bar-context-meta">
-                        Overall progress: {levelIndex + 1}/{levels.length} levels
+                        Overall progress: {levelIndex + 1}/{levels.length} levels · {remainingSummary}
                     </span>
                 </div>
             </div>
