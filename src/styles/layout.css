@@ -240,6 +240,14 @@ button {
     opacity: 0.82;
 }
 
+.top-bar-context-meta {
+    display: block;
+    font-size: 0.73rem;
+    font-weight: 700;
+    line-height: 1.1;
+    opacity: 0.72;
+}
+
 .top-bar-pill {
     justify-self: end;
 }

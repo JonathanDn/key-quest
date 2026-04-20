@@ -12,6 +12,7 @@ export function StageHeader({
                                 draftPlayerName,
                                 levels,
                                 level,
+                                levelIndex,
                                 elapsedTimeMs,
                                 bestTimeMs,
                                 successStreak,
@@ -157,7 +158,10 @@ export function StageHeader({
                         <span className="top-bar-player-edit-error">{playerNameError}</span>
                     ) : null}
                     <span className="top-bar-context-level">
-                        {level.title} · {currentLevelInWorld}/{currentWorldLevels.length}
+                        {level.title} · World {currentWorld}/{WORLD_META.length} · Level {currentLevelInWorld}/{currentWorldLevels.length}
+                    </span>
+                    <span className="top-bar-context-meta">
+                        Overall progress: {levelIndex + 1}/{levels.length} levels
                     </span>
                 </div>
             </div>

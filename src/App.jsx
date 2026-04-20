@@ -225,6 +225,7 @@ function GameExperience({
                 draftPlayerName={draftPlayerName}
                 levels={levels}
                 level={level}
+                levelIndex={levelIndex}
                 elapsedTimeMs={elapsedTimeMs}
                 bestTimeMs={bestTimeMs}
                 successStreak={successStreak}
