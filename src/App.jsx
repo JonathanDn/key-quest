@@ -14,6 +14,7 @@ import { KeyboardStage } from './components/KeyboardStage'
 import { getProgressionState } from './game/selectors/progressionSelectors'
 import { normalizePlayerName } from './game/session/gameSession'
 import { supabaseInitialization } from './lib/supabase'
+import { AlphaQuestExperience } from './games/alpha-quest/AlphaQuestExperience'
 
 function GameExperience({
   playerName,
@@ -542,7 +543,7 @@ function App() {
   const [authPassword, setAuthPassword] = useState('')
   const [authError, setAuthError] = useState('')
   const [authMessage, setAuthMessage] = useState('')
-  const [selectedGameId, setSelectedGameId] = useState(null)
+  const [selectedGameId, setSelectedGameId] = useState(() => window.localStorage.getItem('arcade:lastGame'))
 
   useEffect(() => {
     let isMounted = true
@@ -706,11 +707,15 @@ function App() {
       setAuthError(error?.message || 'Could not sign out right now.')
     }
   }
+  function handleSelectGame(nextGameId) {
+    setSelectedGameId(nextGameId)
+    if (nextGameId) {
+      window.localStorage.setItem('arcade:lastGame', nextGameId)
+    }
+  }
 
-  if (
-      activePlayerName &&
-      (selectedGameId === 'key-quest' || selectedGameId === 'alpha-quest')
-  ) {
+
+  if (activePlayerName && selectedGameId === 'key-quest') {
     return (
         <GameExperience
             playerName={activePlayerName}
@@ -722,12 +727,17 @@ function App() {
     )
   }
 
-  if (
-      activePlayerName &&
-      selectedGameId !== 'key-quest' &&
-      selectedGameId !== 'alpha-quest'
-  ) {
-    return <GameSelectionScreen onSelectGame={setSelectedGameId} />
+  if (activePlayerName && selectedGameId === 'alpha-quest') {
+    return (
+        <AlphaQuestExperience
+            playerName={activePlayerName}
+            onExitToHub={() => handleSelectGame(null)}
+        />
+    )
+  }
+
+  if (activePlayerName) {
+    return <GameSelectionScreen onSelectGame={handleSelectGame} />
   }
 
   if (authLoading) {
