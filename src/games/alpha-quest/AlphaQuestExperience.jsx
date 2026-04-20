@@ -137,7 +137,10 @@ export function AlphaQuestExperience({ playerName, onExitToHub }) {
             <div>
               <div className="launch-card-badge account">✨ Alpha Quest</div>
               <h1 className="alpha-quest-title">Find the letter</h1>
-              <p className="alpha-quest-subtitle">Player: {playerName}</p>
+              <div className="mini-pill alpha-quest-player-pill">
+                <span className="alpha-quest-player-label">Player:</span>
+                <span className="alpha-quest-player-value">{playerName}</span>
+              </div>
             </div>
 
             <button type="button" className="launch-inline-button" onClick={onExitToHub}>
