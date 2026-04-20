@@ -19,12 +19,17 @@
   gap: 1rem;
 }
 
+.alpha-quest-header-top-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
 .alpha-quest-title {
   margin: 0.25rem 0 0;
 }
 
 .alpha-quest-player-pill {
-  margin-top: 0.45rem;
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
