@@ -398,6 +398,97 @@ function getSuggestedPlayerNameFromUser(user) {
   return normalizePlayerName(emailPrefix)
 }
 
+const ENABLE_ALPHA_QUEST =
+    import.meta.env.VITE_ENABLE_ALPHA_QUEST === 'true'
+
+function GameSelectionScreen({ onSelectGame }) {
+  const alphaQuestEnabled =
+      !import.meta.env.PROD && ENABLE_ALPHA_QUEST
+
+  const games = [
+    {
+      id: 'alpha-quest',
+      title: 'Alpha Quest',
+      description: 'Build typing confidence with letter-based adventures.',
+      available: alphaQuestEnabled,
+      comingSoon: !alphaQuestEnabled,
+    },
+    {
+      id: 'key-quest',
+      title: 'Key Quest',
+      description: 'Play now and unlock worlds while mastering your keyboard.',
+      available: true,
+      comingSoon: false,
+    },
+    {
+      id: 'numeric-quest',
+      title: 'Numeric Quest',
+      description: 'Train number-row speed with upcoming numeric challenges.',
+      available: false,
+      comingSoon: true,
+    },
+  ]
+
+  return (
+      <div className="game-shell">
+        <section className="launch-card game-selection-card" aria-labelledby="game-selection-title">
+          <div className="launch-card-badge account">🎮 Game Hub</div>
+
+          <div className="launch-card-copy">
+            <h1 className="launch-card-title" id="game-selection-title">
+              Choose your quest
+            </h1>
+            <p className="launch-card-text">
+              Pick a game mode to begin your typing adventure.
+            </p>
+            <p className="launch-card-subtext">
+              Alpha Quest and Numeric Quest are still in development.
+            </p>
+          </div>
+
+          <div className="game-selection-grid">
+            {games.map((game) => (
+                <article
+                    key={game.id}
+                    className={[
+                      'game-option-card',
+                      game.available ? 'available' : 'disabled',
+                    ].join(' ')}
+                >
+                  <div className="game-option-header">
+                    <h2 className="game-option-title">{game.title}</h2>
+                    {game.comingSoon ? (
+                        <span className="game-option-pill">Coming soon</span>
+                    ) : null}
+                  </div>
+
+                  <p className="game-option-text">{game.description}</p>
+
+                  {game.available ? (
+                      <button
+                          type="button"
+                          className="big-button game-option-button"
+                          onClick={() => onSelectGame(game.id)}
+                      >
+                        Play {game.title}
+                      </button>
+                  ) : (
+                      <button
+                          type="button"
+                          className="game-option-button disabled"
+                          disabled
+                      >
+                        {game.comingSoon ? 'Coming soon' : 'Unavailable'}
+                      </button>
+                  )}
+                </article>
+            ))}
+          </div>
+        </section>
+      </div>
+  )
+}
+
 function App() {
   if (!supabaseInitialization.isConfigured) {
     const missingList = supabaseInitialization.missingEnvVars.join(', ')
@@ -455,6 +546,7 @@ function App() {
   const [authPassword, setAuthPassword] = useState('')
   const [authError, setAuthError] = useState('')
   const [authMessage, setAuthMessage] = useState('')
+  const [selectedGameId, setSelectedGameId] = useState(null)
 
   useEffect(() => {
     let isMounted = true
@@ -613,12 +705,13 @@ function App() {
       setAuthError('')
       setNameError('')
       setAuthPassword('')
+      setSelectedGameId(null)
     } catch (error) {
       setAuthError(error?.message || 'Could not sign out right now.')
     }
   }
 
-  if (activePlayerName) {
+  if (activePlayerName && selectedGameId === 'key-quest') {
     return (
         <GameExperience
             playerName={activePlayerName}
@@ -628,6 +721,10 @@ function App() {
             onSignOut={handleSignOut}
         />
     )
+  }
+
+  if (activePlayerName && selectedGameId !== 'key-quest') {
+    return <GameSelectionScreen onSelectGame={setSelectedGameId} />
   }
 
   if (authLoading) {
