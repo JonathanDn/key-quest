@@ -398,12 +398,8 @@ function getSuggestedPlayerNameFromUser(user) {
   return normalizePlayerName(emailPrefix)
 }
 
-const ENABLE_ALPHA_QUEST =
-    import.meta.env.VITE_ENABLE_ALPHA_QUEST === 'true'
-
 function GameSelectionScreen({ onSelectGame }) {
-  const alphaQuestEnabled =
-      !import.meta.env.PROD && ENABLE_ALPHA_QUEST
+  const alphaQuestEnabled = true
 
   const games = [
     {
@@ -442,7 +438,7 @@ function GameSelectionScreen({ onSelectGame }) {
               Pick a game mode to begin your typing adventure.
             </p>
             <p className="launch-card-subtext">
-              Alpha Quest and Numeric Quest are still in development.
+              Numeric Quest is still in development.
             </p>
           </div>
 
@@ -711,7 +707,10 @@ function App() {
     }
   }
 
-  if (activePlayerName && selectedGameId === 'key-quest') {
+  if (
+      activePlayerName &&
+      (selectedGameId === 'key-quest' || selectedGameId === 'alpha-quest')
+  ) {
     return (
         <GameExperience
             playerName={activePlayerName}
@@ -723,7 +722,11 @@ function App() {
     )
   }
 
-  if (activePlayerName && selectedGameId !== 'key-quest') {
+  if (
+      activePlayerName &&
+      selectedGameId !== 'key-quest' &&
+      selectedGameId !== 'alpha-quest'
+  ) {
     return <GameSelectionScreen onSelectGame={setSelectedGameId} />
   }
 
