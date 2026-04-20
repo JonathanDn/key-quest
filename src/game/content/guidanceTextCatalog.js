@@ -1,5 +1,6 @@
 import { LEVELS } from './levels.js'
 import { codeToLabel } from './keyData.js'
+import { GUIDANCE_TEXT } from './guidanceConfig.js'
 
 function charToCode(char) {
     if (char === ' ') {
@@ -47,26 +48,26 @@ function labelForCode(code) {
 }
 
 export function collectGuidanceRowTexts() {
-    const texts = new Set(['Watch the glowing key'])
+    const texts = new Set([GUIDANCE_TEXT.watchGlowingKey])
 
     LEVELS.forEach((level) => {
         if (Array.isArray(level.promptPool) && level.promptPool.length > 0) {
             level.promptPool.forEach((promptText) => {
-                addIfPresent(texts, `Type "${promptText}"`)
+                addIfPresent(texts, `${GUIDANCE_TEXT.typePrefix} ${promptText}`)
 
                 Array.from(promptText).forEach((char) => {
                     const code = charToCode(char)
-                    addIfPresent(texts, `Try ${labelForCode(code)}`)
+                    addIfPresent(texts, `${GUIDANCE_TEXT.tryPrefix} ${labelForCode(code)}`)
                 })
             })
             return
         }
 
         if (Array.isArray(level.missions) && level.missions.length > 0) {
-            level.missions.forEach((mission) => {
-                addIfPresent(texts, mission.taskLabel ?? mission.helper ?? mission.label)
-                addIfPresent(texts, `Try ${mission.label}`)
-            })
+                level.missions.forEach((mission) => {
+                    addIfPresent(texts, mission.taskLabel ?? mission.helper ?? mission.label)
+                    addIfPresent(texts, `${GUIDANCE_TEXT.tryPrefix} ${mission.label}`)
+                })
             return
         }
 
@@ -74,21 +75,21 @@ export function collectGuidanceRowTexts() {
             level.targets.forEach((target) => {
                 if (target.type === 'combo') {
                     addIfPresent(texts, target.helper ?? target.label)
-                    addIfPresent(texts, `Try ${target.label}`)
+                    addIfPresent(texts, `${GUIDANCE_TEXT.tryPrefix} ${target.label}`)
                     return
                 }
 
-                const label = labelForCode(target.code)
-                addIfPresent(texts, `Tap ${label}`)
-                addIfPresent(texts, `Try ${label}`)
-            })
+                    const label = labelForCode(target.code)
+                    addIfPresent(texts, `${GUIDANCE_TEXT.tapPrefix} ${label}`)
+                    addIfPresent(texts, `${GUIDANCE_TEXT.tryPrefix} ${label}`)
+                })
             return
         }
 
         ;(level.keys ?? []).forEach((code) => {
             const label = labelForCode(code)
-            addIfPresent(texts, `Tap ${label}`)
-            addIfPresent(texts, `Try ${label}`)
+            addIfPresent(texts, `${GUIDANCE_TEXT.tapPrefix} ${label}`)
+            addIfPresent(texts, `${GUIDANCE_TEXT.tryPrefix} ${label}`)
         })
     })
 
