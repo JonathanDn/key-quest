@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import re
 import struct
 import hashlib
@@ -21,6 +22,7 @@ from pathlib import Path
 
 SAMPLE_RATE = 24_000
 MASTER_GAIN = 0.22
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 
 US_SAYLIKE_SPELLINGS = {
     "A": "ay",
@@ -404,14 +406,15 @@ def write_manifest(
 ) -> None:
     project_root = Path(__file__).resolve().parents[1]
     guidance_count = len(collect_guidance_row_texts(project_root))
+    single_key_labels, phrase_text = load_voice_text_config(project_root)
     manifest = {
         "engine": engine,
         "language": language,
         "speaker": speaker,
         "speed": speed,
         "pronunciation_mode": pronunciation_mode,
-        "single_count": len(SINGLE_KEY_LABELS),
-        "phrase_count": len(PHRASE_TEXT),
+        "single_count": len(single_key_labels),
+        "phrase_count": len(phrase_text),
         "guidance_count": guidance_count,
     }
     ensure_parent(audio_root / "voice_manifest.json")
