@@ -91,6 +91,20 @@
   font-size: clamp(1.8rem, 5vw, 2.4rem);
   font-weight: 700;
   cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease,
+    background-color 140ms ease;
+}
+
+.alpha-letter-tile:hover {
+  transform: translateY(-2px);
+  border-color: rgba(231, 214, 255, 0.8);
+  background: rgba(125, 63, 235, 0.45);
+  box-shadow: 0 10px 24px rgba(16, 5, 38, 0.42);
+}
+
+.alpha-letter-tile:focus-visible {
+  outline: 2px solid rgba(235, 223, 255, 0.95);
+  outline-offset: 2px;
 }
 
 .alpha-letter-tile.correct {
