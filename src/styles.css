@@ -91,6 +91,7 @@
   font-size: clamp(1.8rem, 5vw, 2.4rem);
   font-weight: 700;
   cursor: pointer;
+  transition: transform 140ms ease, background-color 140ms ease;
 }
 
 .alpha-letter-tile.correct {
@@ -99,6 +100,34 @@
 
 .alpha-letter-tile.wrong {
   background: rgba(205, 77, 110, 0.5);
+  animation: alpha-wrong-shake 260ms ease-in-out;
+}
+
+@keyframes alpha-wrong-shake {
+  0% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-8px);
+  }
+  40% {
+    transform: translateX(8px);
+  }
+  60% {
+    transform: translateX(-6px);
+  }
+  80% {
+    transform: translateX(6px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alpha-letter-tile.wrong {
+    animation: none;
+  }
 }
 
 .alpha-summary-card {
