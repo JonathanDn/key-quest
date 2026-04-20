@@ -879,6 +879,7 @@ button {
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+    white-space: nowrap;
 }
 
 .game-option-text {
@@ -899,6 +900,7 @@ button {
     background: rgba(255, 255, 255, 0.08);
     color: rgba(255, 255, 255, 0.66);
     font-weight: 900;
+    white-space: nowrap;
     cursor: not-allowed;
 }
 
