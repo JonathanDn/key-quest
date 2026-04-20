@@ -40,11 +40,11 @@ export const SINGLE_KEY_SPOKEN_LABELS = {
 }
 
 export const PHRASE_CUE_TEXT = {
-    'combo/copy-step': 'Hold Ctrl + C',
-    'combo/paste-step': 'Hold Ctrl + V',
-    'combo/undo-step': 'Hold Ctrl + Z',
+    'combo/copy-step': 'Hold control plus C',
+    'combo/paste-step': 'Hold control plus V',
+    'combo/undo-step': 'Hold control plus Z',
     'combo/combo-step': 'Use combo keys together',
-    'text/start-cue': 'Type dog',
+    'text/start-cue': 'Type the word',
     'complete/level-complete': 'Level complete. Great job!',
     'complete/world-complete': 'World complete. Amazing work!',
     'complete/game-complete': 'You finished Key Quest. Fantastic typing!',

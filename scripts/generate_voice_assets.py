@@ -58,6 +58,11 @@ US_SAYLIKE_SPELLINGS = {
     " ": "space",
 }
 
+TOKEN_REPLACEMENTS = {
+    "SPACE": "space",
+    "CTRL": "control",
+}
+
 PHRASE_CUE_NOTES = {
     "combo/copy-step": [466.16, 554.37, 659.25],
     "combo/paste-step": [523.25, 659.25, 783.99],
@@ -197,18 +202,30 @@ def spellout_us(text: str) -> str:
     return ", ".join(tokens)
 
 
-def looks_code_like(text: str) -> bool:
-    if "/" in text or ";" in text:
-        return True
+def normalize_auto_phrase(text: str) -> str:
+    normalized = text
 
-    uppercase_sequences = re.findall(r"\b[A-Z]{2,}\b", text)
-    if uppercase_sequences:
-        return True
+    normalized = re.sub(r"\+", " plus ", normalized)
 
-    if re.search(r"\b[A-Za-z]\d|\d[A-Za-z]\b", text):
-        return True
+    def replace_token(match: re.Match[str]) -> str:
+        token = match.group(0)
+        upper = token.upper()
 
-    return False
+        if upper in TOKEN_REPLACEMENTS:
+            return TOKEN_REPLACEMENTS[upper]
+
+        if len(token) == 1 and token.isalpha():
+            return US_SAYLIKE_SPELLINGS.get(upper, token)
+
+        return token
+
+    normalized = re.sub(r"\b[A-Za-z]+\b", replace_token, normalized)
+
+    for symbol, spoken in ((";", "semicolon"), (",", "comma"), (".", "period"), ("/", "slash")):
+        normalized = normalized.replace(symbol, f" {spoken} ")
+
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    return normalized
 
 
 def normalize_for_tts(text: str, mode: str) -> str:
@@ -218,10 +235,7 @@ def normalize_for_tts(text: str, mode: str) -> str:
     if mode == "spell":
         return spellout_us(text)
 
-    if looks_code_like(text):
-        return spellout_us(text)
-
-    return text
+    return normalize_auto_phrase(text)
 
 
 def generate_with_placeholder(audio_root: Path) -> int:
