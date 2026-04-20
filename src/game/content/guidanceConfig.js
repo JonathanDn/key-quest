@@ -5,51 +5,6 @@ export const GUIDANCE_TEXT = {
     typePrefix: 'Type',
 }
 
-export const SINGLE_KEY_SPOKEN_LABELS = {
-    KeyQ: 'Q',
-    KeyW: 'W',
-    KeyE: 'E',
-    KeyR: 'R',
-    KeyT: 'T',
-    KeyA: 'A',
-    KeyS: 'S',
-    KeyD: 'D',
-    KeyF: 'F',
-    KeyG: 'G',
-    KeyY: 'Y',
-    KeyU: 'U',
-    KeyI: 'I',
-    KeyO: 'O',
-    KeyP: 'P',
-    KeyH: 'H',
-    KeyJ: 'J',
-    KeyK: 'K',
-    KeyL: 'L',
-    Semicolon: ';',
-    KeyZ: 'Z',
-    KeyX: 'X',
-    KeyC: 'C',
-    KeyV: 'V',
-    KeyB: 'B',
-    KeyN: 'N',
-    KeyM: 'M',
-    Comma: ',',
-    Period: '.',
-    Slash: '/',
-    Space: ' ',
-}
-
-export const PHRASE_CUE_TEXT = {
-    'combo/copy-step': 'Hold control plus C',
-    'combo/paste-step': 'Hold control plus V',
-    'combo/undo-step': 'Hold control plus Z',
-    'combo/combo-step': 'Use combo keys together',
-    'text/start-cue': 'Type the word',
-    'complete/level-complete': 'Level complete. Great job!',
-    'complete/world-complete': 'World complete. Amazing work!',
-    'complete/game-complete': 'You finished Key Quest. Fantastic typing!',
-}
-
 export const PROMPT_POOLS = {
     wordSprouts: ['cat', 'dog', 'sun', 'map', 'run', 'hat', 'jam', 'box'],
     spaceBuilder: ['red sun', 'big dog', 'fun run', 'hot jam', 'mad cat', 'run fast'],
