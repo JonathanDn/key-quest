@@ -2,3 +2,109 @@
 @import './styles/layout.css';
 @import './styles/stage/index.css';
 @import './styles/keyboard.css';
+.alpha-quest-screen {
+  width: min(980px, 100%);
+}
+
+.alpha-quest-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.alpha-quest-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.alpha-quest-title {
+  margin: 0.25rem 0 0;
+}
+
+.alpha-quest-subtitle {
+  margin: 0.35rem 0 0;
+  color: rgba(230, 228, 255, 0.9);
+}
+
+.alpha-quest-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+}
+
+.alpha-quest-stats > div {
+  border-radius: 14px;
+  padding: 0.7rem 0.8rem;
+  background: rgba(76, 32, 145, 0.32);
+  border: 1px solid rgba(190, 166, 255, 0.35);
+}
+
+.alpha-quest-stats span {
+  display: block;
+  font-size: 0.78rem;
+  opacity: 0.8;
+}
+
+.alpha-quest-stats strong {
+  font-size: 1.2rem;
+}
+
+.alpha-target-panel {
+  text-align: center;
+  border-radius: 20px;
+  padding: 1rem;
+  background: linear-gradient(180deg, rgba(58, 22, 116, 0.9), rgba(25, 11, 57, 0.9));
+  border: 1px solid rgba(211, 193, 255, 0.4);
+}
+
+.alpha-target-prompt {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.alpha-target-letter {
+  margin: 0.3rem 0;
+  font-size: clamp(4rem, 11vw, 6rem);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.alpha-feedback {
+  margin: 0;
+  color: rgba(229, 233, 255, 0.9);
+}
+
+.alpha-field {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(80px, 1fr));
+  gap: 0.75rem;
+}
+
+.alpha-letter-tile {
+  min-height: 92px;
+  border-radius: 16px;
+  border: 1px solid rgba(193, 167, 255, 0.38);
+  background: rgba(92, 36, 189, 0.32);
+  color: #ffffff;
+  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.alpha-letter-tile.correct {
+  background: rgba(28, 179, 115, 0.45);
+}
+
+.alpha-letter-tile.wrong {
+  background: rgba(205, 77, 110, 0.5);
+}
+
+.alpha-summary-card {
+  border-radius: 18px;
+  padding: 1rem;
+  text-align: center;
+  background: rgba(49, 20, 97, 0.86);
+  border: 1px solid rgba(222, 203, 255, 0.38);
+}
