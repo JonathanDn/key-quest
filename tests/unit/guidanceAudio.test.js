@@ -15,6 +15,7 @@ describe('guidance audio helpers', () => {
 
     it('detects tap guidance copy', () => {
         expect(isTapGuidanceMessage('Tap A')).toBe(true)
+        expect(isTapGuidanceMessage('Tap Q')).toBe(false)
         expect(isTapGuidanceMessage('Try A')).toBe(false)
         expect(isTapGuidanceMessage('')).toBe(false)
     })

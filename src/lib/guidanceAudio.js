@@ -1,3 +1,5 @@
+import { WORLD1_TAP_GUIDANCE_SET } from '../game/content/world1AudioText'
+
 let guidanceMapPromise = null
 
 export function isWorldOneBasicsLevel(level) {
@@ -5,7 +7,7 @@ export function isWorldOneBasicsLevel(level) {
 }
 
 export function isTapGuidanceMessage(message) {
-    return typeof message === 'string' && message.startsWith('Tap ')
+    return typeof message === 'string' && WORLD1_TAP_GUIDANCE_SET.has(message)
 }
 
 export function shouldAutoPlayTapGuidance(level, message) {
