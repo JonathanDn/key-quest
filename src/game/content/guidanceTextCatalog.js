@@ -47,10 +47,10 @@ function labelForCode(code) {
     return codeToLabel[code] ?? code
 }
 
-export function collectGuidanceRowTexts() {
+function collectGuidanceRowTextsInternal(levelFilter) {
     const texts = new Set([GUIDANCE_TEXT.watchGlowingKey])
 
-    LEVELS.forEach((level) => {
+    LEVELS.filter(levelFilter).forEach((level) => {
         if (Array.isArray(level.promptPool) && level.promptPool.length > 0) {
             level.promptPool.forEach((promptText) => {
                 addIfPresent(texts, `${GUIDANCE_TEXT.typePrefix} ${promptText}`)
@@ -94,4 +94,13 @@ export function collectGuidanceRowTexts() {
     })
 
     return Array.from(texts).sort((left, right) => left.localeCompare(right))
+}
+
+
+export function collectGuidanceRowTexts() {
+    return collectGuidanceRowTextsInternal(() => true)
+}
+
+export function collectGuidanceRowTextsForWorld(world) {
+    return collectGuidanceRowTextsInternal((level) => level.world === world)
 }
