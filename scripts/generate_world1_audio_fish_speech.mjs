@@ -2,7 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 
-import { collectGuidanceRowTextsForWorld } from '../src/game/content/guidanceTextCatalog.js'
+import { WORLD1_AUDIO_TEXT } from '../src/game/content/world1AudioText.js'
 
 function parseArgs(argv) {
     const options = {
@@ -51,6 +51,7 @@ function parseArgs(argv) {
             i += 1
             continue
         }
+
 
         throw new Error(`Unknown argument: ${arg}`)
     }
@@ -135,7 +136,7 @@ async function main() {
     const outputDir = path.resolve(options.outputDir)
     await mkdir(outputDir, { recursive: true })
 
-    const texts = collectGuidanceRowTextsForWorld(1)
+    const texts = WORLD1_AUDIO_TEXT.tapGuidance
     const manifest = []
 
     console.log(`Generating ${texts.length} clips into ${outputDir}`)
