@@ -1,0 +1,8 @@
+# Recommended: use one pre-created fish-speech reference ID for consistent voice.
+export FISH_SPEECH_REFERENCE_ID="your-reference-id"
+
+node scripts/generate_world1_audio_fish_speech.mjs \
+  --output-dir ./tmp/world1-tap-audio \
+  --tts-url http://127.0.0.1:8080/v1/tts \
+  --reference-id "$FISH_SPEECH_REFERENCE_ID" \
+  --format wav
