@@ -52,3 +52,78 @@ Players can finish levels, but they currently get weak feedback on consistency. 
 - Gives instant feedback on momentum.
 - Rewards precision without punishing progress.
 - Works across single-key, prompt-typing, and combo levels via engine-provided failure flags.
+
+## Generate world-1 voice audio (Tap prompts only)
+
+This repo includes a Node.js script that generates audio clips for **World 1 Tap prompts only** (it skips all `Try ...` lines).
+
+### 1) Clone and install this repo
+
+```bash
+git clone <your-key-quest-repo-url>
+cd key-quest
+npm install
+```
+
+### 2) Set up and run fish-speech locally
+
+From your local `fish-speech` repo:
+
+```bash
+python tools/api_server.py \
+  --llama-checkpoint-path checkpoints/s2-pro \
+  --decoder-checkpoint-path checkpoints/s2-pro/codec.pth \
+  --listen 127.0.0.1:8080
+```
+
+### 3) Generate the audio files
+
+Back in this `key-quest` repo:
+
+```bash
+node scripts/generate_world1_audio_fish_speech.mjs --output-dir ./tmp/world1-audio
+```
+
+The script writes one file per prompt and creates `world1_manifest.json`.
+
+### Keep all audio in the same speaker voice
+
+Use a single reference voice ID for the whole run:
+
+```bash
+node scripts/generate_world1_audio_fish_speech.mjs \
+  --output-dir ./tmp/world1-audio \
+  --reference-id <YOUR_REFERENCE_ID>
+```
+
+As long as you pass the same `--reference-id`, all generated files in that run will request the same voice.
+
+### Ordered World 1 strings for audio generation (Tap only)
+
+1. `Tap ,`
+2. `Tap ;`
+3. `Tap A`
+4. `Tap B`
+5. `Tap C`
+6. `Tap D`
+7. `Tap E`
+8. `Tap F`
+9. `Tap I`
+10. `Tap J`
+11. `Tap K`
+12. `Tap L`
+13. `Tap M`
+14. `Tap N`
+15. `Tap R`
+16. `Tap S`
+17. `Tap SPACE`
+18. `Tap T`
+19. `Tap U`
+20. `Tap V`
+21. `Tap Y`
+
+You can print this list anytime with:
+
+```bash
+node scripts/export_world_guidance_texts.mjs 1 --tap-only
+```
