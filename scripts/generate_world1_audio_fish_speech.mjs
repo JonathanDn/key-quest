@@ -2,14 +2,22 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 
-import { collectGuidanceRowTextsForWorld } from '../src/game/content/guidanceTextCatalog.js'
+import { WORLD1_AUDIO_TEXT } from '../src/game/content/world1AudioText.js'
+
+const DEFAULT_OUTPUT_DIR = './tmp/world1-tap-audio'
+const DEFAULT_TTS_URL = 'http://127.0.0.1:8080/v1/tts'
+const DEFAULT_REFERENCE_ID = 'mother-goose-world1'
+const DEFAULT_REFERENCE_AUDIO_URL = 'https://dn710702.ca.archive.org/0/items/real_mother_goose_ah_librivox/mothergoose_01_anonymous_64kb.mp3'
+const DEFAULT_REFERENCE_TEXT = 'Mother Goose reference narration sample'
 
 function parseArgs(argv) {
     const options = {
-        outputDir: null,
-        ttsUrl: 'http://127.0.0.1:8080/v1/tts',
+        outputDir: DEFAULT_OUTPUT_DIR,
+        ttsUrl: DEFAULT_TTS_URL,
         apiKey: null,
-        referenceId: null,
+        referenceId: DEFAULT_REFERENCE_ID,
+        referenceAudioUrl: DEFAULT_REFERENCE_AUDIO_URL,
+        referenceText: DEFAULT_REFERENCE_TEXT,
         format: 'wav',
     }
 
@@ -46,11 +54,24 @@ function parseArgs(argv) {
             continue
         }
 
+        if (arg === '--reference-audio-url') {
+            options.referenceAudioUrl = value
+            i += 1
+            continue
+        }
+
+        if (arg === '--reference-text') {
+            options.referenceText = value
+            i += 1
+            continue
+        }
+
         if (arg === '--format') {
             options.format = value
             i += 1
             continue
         }
+
 
         throw new Error(`Unknown argument: ${arg}`)
     }
@@ -64,10 +85,14 @@ Usage:
   node scripts/generate_world1_audio_fish_speech.mjs --output-dir <path> [options]
 
 Options:
-  --output-dir <path>    Required output folder for audio files.
+  --output-dir <path>    Output folder for audio files. Default: ./tmp/world1-tap-audio
   --tts-url <url>        fish-speech TTS endpoint. Default: http://127.0.0.1:8080/v1/tts
   --api-key <token>      Optional bearer token when server auth is enabled.
-  --reference-id <id>    Optional fish-speech reference ID for voice selection.
+  --reference-id <id>    fish-speech reference ID. Default: mother-goose-world1
+  --reference-audio-url  Reference voice audio URL.
+                          Default: https://dn710702.ca.archive.org/0/items/real_mother_goose_ah_librivox/mothergoose_01_anonymous_64kb.mp3
+  --reference-text       Transcript/label required by fish-speech for the reference sample.
+                          Default: Mother Goose reference narration sample
   --format <fmt>         One of: wav, mp3, opus, pcm. Default: wav
   --help, -h             Show this help text.
 `)
@@ -78,10 +103,12 @@ function slugify(text) {
     return normalized || 'clip'
 }
 
-async function synthesizeText({ ttsUrl, apiKey, referenceId, format, text }) {
+async function synthesizeText({ ttsUrl, apiKey, referenceId, referenceAudioUrl, referenceText, format, text }) {
     const requestData = {
         text,
-        references: [],
+        references: referenceAudioUrl
+            ? [{ audio: referenceAudioUrl, text: referenceText }]
+            : [],
         reference_id: referenceId,
         format,
         latency: 'normal',
@@ -124,10 +151,6 @@ async function main() {
         return
     }
 
-    if (!options.outputDir) {
-        throw new Error('Missing required --output-dir')
-    }
-
     if (!['wav', 'mp3', 'opus', 'pcm'].includes(options.format)) {
         throw new Error(`Unsupported --format "${options.format}"`)
     }
@@ -135,7 +158,7 @@ async function main() {
     const outputDir = path.resolve(options.outputDir)
     await mkdir(outputDir, { recursive: true })
 
-    const texts = collectGuidanceRowTextsForWorld(1)
+    const texts = WORLD1_AUDIO_TEXT.tapGuidance
     const manifest = []
 
     console.log(`Generating ${texts.length} clips into ${outputDir}`)
@@ -151,6 +174,8 @@ async function main() {
             ttsUrl: options.ttsUrl,
             apiKey: options.apiKey,
             referenceId: options.referenceId,
+            referenceAudioUrl: options.referenceAudioUrl,
+            referenceText: options.referenceText,
             format: options.format,
             text,
         })
@@ -165,7 +190,7 @@ async function main() {
     const manifestPath = path.join(outputDir, 'world1_manifest.json')
     await writeFile(
         manifestPath,
-        `${JSON.stringify({ world: 1, count: manifest.length, entries: manifest }, null, 2)}\n`,
+        `${JSON.stringify({ world: 1, referenceId: options.referenceId, referenceAudioUrl: options.referenceAudioUrl, referenceText: options.referenceText, count: manifest.length, entries: manifest }, null, 2)}\n`,
     )
 
     console.log(`Done. Manifest: ${manifestPath}`)
