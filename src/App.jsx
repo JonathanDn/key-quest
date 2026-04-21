@@ -14,6 +14,7 @@ import { KeyboardStage } from './components/KeyboardStage'
 import { getProgressionState } from './game/selectors/progressionSelectors'
 import { normalizePlayerName } from './game/session/gameSession'
 import { supabaseInitialization } from './lib/supabase'
+import { resolveGuidanceAudioSrc, shouldAutoPlayTapGuidance } from './lib/guidanceAudio'
 
 function GameExperience({
   playerName,
@@ -67,6 +68,7 @@ function GameExperience({
   const starCounterRef = useRef(null)
   const worldBadgeRefs = useRef({})
   const levelNodeRefs = useRef({})
+  const guidanceVoiceRef = useRef(null)
 
   useBestTimeSync({
     userId,
@@ -200,6 +202,40 @@ function GameExperience({
       setIsSavingPlayerName(false)
     }
   }
+
+  useEffect(() => {
+    if (!shouldAutoPlayTapGuidance(level, message)) {
+      return undefined
+    }
+
+    let cancelled = false
+
+    resolveGuidanceAudioSrc(message)
+      .then((source) => {
+        if (cancelled || !source) {
+          return
+        }
+
+        if (guidanceVoiceRef.current) {
+          guidanceVoiceRef.current.pause()
+          guidanceVoiceRef.current = null
+        }
+
+        const clip = new Audio(source)
+        clip.play().catch(() => {})
+        guidanceVoiceRef.current = clip
+      })
+      .catch(() => {})
+
+    return () => {
+      cancelled = true
+
+      if (guidanceVoiceRef.current) {
+        guidanceVoiceRef.current.pause()
+        guidanceVoiceRef.current = null
+      }
+    }
+  }, [level, message])
 
   useEffect(() => {
     if (!didSavePlayerName) {
