@@ -1,0 +1,6 @@
+node scripts/generate_world1_audio_fish_speech.mjs \
+  --output-dir ./tmp/world1-tap-audio \
+  --tts-url http://127.0.0.1:8080/v1/tts \
+  --reference-id mother-goose-world1 \
+  --reference-audio-url https://dn710702.ca.archive.org/0/items/real_mother_goose_ah_librivox/mothergoose_01_anonymous_64kb.mp3 \
+  --format wav
