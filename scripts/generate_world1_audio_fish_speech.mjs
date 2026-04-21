@@ -8,6 +8,7 @@ const DEFAULT_OUTPUT_DIR = './tmp/world1-tap-audio'
 const DEFAULT_TTS_URL = 'http://127.0.0.1:8080/v1/tts'
 const DEFAULT_REFERENCE_ID = 'mother-goose-world1'
 const DEFAULT_REFERENCE_AUDIO_URL = 'https://dn710702.ca.archive.org/0/items/real_mother_goose_ah_librivox/mothergoose_01_anonymous_64kb.mp3'
+const DEFAULT_REFERENCE_TEXT = 'Mother Goose reference narration sample'
 
 function parseArgs(argv) {
     const options = {
@@ -16,6 +17,7 @@ function parseArgs(argv) {
         apiKey: null,
         referenceId: DEFAULT_REFERENCE_ID,
         referenceAudioUrl: DEFAULT_REFERENCE_AUDIO_URL,
+        referenceText: DEFAULT_REFERENCE_TEXT,
         format: 'wav',
     }
 
@@ -58,6 +60,12 @@ function parseArgs(argv) {
             continue
         }
 
+        if (arg === '--reference-text') {
+            options.referenceText = value
+            i += 1
+            continue
+        }
+
         if (arg === '--format') {
             options.format = value
             i += 1
@@ -83,6 +91,8 @@ Options:
   --reference-id <id>    fish-speech reference ID. Default: mother-goose-world1
   --reference-audio-url  Reference voice audio URL.
                           Default: https://dn710702.ca.archive.org/0/items/real_mother_goose_ah_librivox/mothergoose_01_anonymous_64kb.mp3
+  --reference-text       Transcript/label required by fish-speech for the reference sample.
+                          Default: Mother Goose reference narration sample
   --format <fmt>         One of: wav, mp3, opus, pcm. Default: wav
   --help, -h             Show this help text.
 `)
@@ -93,11 +103,11 @@ function slugify(text) {
     return normalized || 'clip'
 }
 
-async function synthesizeText({ ttsUrl, apiKey, referenceId, referenceAudioUrl, format, text }) {
+async function synthesizeText({ ttsUrl, apiKey, referenceId, referenceAudioUrl, referenceText, format, text }) {
     const requestData = {
         text,
         references: referenceAudioUrl
-            ? [{ audio: referenceAudioUrl }]
+            ? [{ audio: referenceAudioUrl, text: referenceText }]
             : [],
         reference_id: referenceId,
         format,
@@ -165,6 +175,7 @@ async function main() {
             apiKey: options.apiKey,
             referenceId: options.referenceId,
             referenceAudioUrl: options.referenceAudioUrl,
+            referenceText: options.referenceText,
             format: options.format,
             text,
         })
@@ -179,7 +190,7 @@ async function main() {
     const manifestPath = path.join(outputDir, 'world1_manifest.json')
     await writeFile(
         manifestPath,
-        `${JSON.stringify({ world: 1, referenceId: options.referenceId, referenceAudioUrl: options.referenceAudioUrl, count: manifest.length, entries: manifest }, null, 2)}\n`,
+        `${JSON.stringify({ world: 1, referenceId: options.referenceId, referenceAudioUrl: options.referenceAudioUrl, referenceText: options.referenceText, count: manifest.length, entries: manifest }, null, 2)}\n`,
     )
 
     console.log(`Done. Manifest: ${manifestPath}`)
