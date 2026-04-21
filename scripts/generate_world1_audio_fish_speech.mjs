@@ -59,11 +59,9 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-    console.log(`Generate world-1 TAP guidance audio files via fish-speech API.\n
+    console.log(`Generate world-1 guidance audio files via fish-speech API.\n
 Usage:
   node scripts/generate_world1_audio_fish_speech.mjs --output-dir <path> [options]
-
-This script intentionally includes only "Tap" prompts for World 1 (no "Try" prompts).
 
 Options:
   --output-dir <path>    Required output folder for audio files.
@@ -104,18 +102,11 @@ async function synthesizeText({ ttsUrl, apiKey, referenceId, format, text }) {
         headers.authorization = `Bearer ${apiKey}`
     }
 
-    let response
-
-    try {
-        response = await fetch(ttsUrl, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(requestData),
-        })
-    } catch (error) {
-        const reason = error?.cause?.code ?? error?.cause?.message ?? error?.message ?? 'Unknown network error'
-        throw new Error(`Network request failed for ${ttsUrl}. Reason: ${reason}`)
-    }
+    const response = await fetch(ttsUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestData),
+    })
 
     if (!response.ok) {
         const detail = await response.text()
@@ -144,7 +135,7 @@ async function main() {
     const outputDir = path.resolve(options.outputDir)
     await mkdir(outputDir, { recursive: true })
 
-    const texts = collectGuidanceRowTextsForWorld(1).filter((text) => text.startsWith('Tap '))
+    const texts = collectGuidanceRowTextsForWorld(1)
     const manifest = []
 
     console.log(`Generating ${texts.length} clips into ${outputDir}`)
@@ -182,6 +173,5 @@ async function main() {
 
 main().catch((error) => {
     console.error(error.message)
-    console.error('Tip: verify fish-speech server is running and reachable at --tts-url (default: http://127.0.0.1:8080/v1/tts).')
     process.exitCode = 1
 })
