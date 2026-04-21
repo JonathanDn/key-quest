@@ -3,10 +3,11 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { WORLD1_AUDIO_TEXT } from '../src/game/content/world1AudioText.js'
+import { buildSynthesisRequestData, formatReferenceIdLog } from './world1AudioGeneration.js'
 
 const DEFAULT_OUTPUT_DIR = './tmp/world1-tap-audio'
 const DEFAULT_TTS_URL = 'http://127.0.0.1:8080/v1/tts'
-const DEFAULT_REFERENCE_ID = 'mother-goose-world1'
+const DEFAULT_REFERENCE_ID = process.env.FISH_SPEECH_REFERENCE_ID || null
 const DEFAULT_REFERENCE_AUDIO_URL = 'https://dn710702.ca.archive.org/0/items/real_mother_goose_ah_librivox/mothergoose_01_anonymous_64kb.mp3'
 const DEFAULT_REFERENCE_TEXT = 'Mother Goose reference narration sample'
 
@@ -88,13 +89,15 @@ Options:
   --output-dir <path>    Output folder for audio files. Default: ./tmp/world1-tap-audio
   --tts-url <url>        fish-speech TTS endpoint. Default: http://127.0.0.1:8080/v1/tts
   --api-key <token>      Optional bearer token when server auth is enabled.
-  --reference-id <id>    fish-speech reference ID. Default: mother-goose-world1
+  --reference-id <id>    fish-speech reference ID. Default: $FISH_SPEECH_REFERENCE_ID
   --reference-audio-url  Reference voice audio URL.
                           Default: https://dn710702.ca.archive.org/0/items/real_mother_goose_ah_librivox/mothergoose_01_anonymous_64kb.mp3
   --reference-text       Transcript/label required by fish-speech for the reference sample.
                           Default: Mother Goose reference narration sample
   --format <fmt>         One of: wav, mp3, opus, pcm. Default: wav
   --help, -h             Show this help text.
+
+For stable voice across files, prefer a pre-created reference ID.
 `)
 }
 
@@ -104,22 +107,13 @@ function slugify(text) {
 }
 
 async function synthesizeText({ ttsUrl, apiKey, referenceId, referenceAudioUrl, referenceText, format, text }) {
-    const requestData = {
-        text,
-        references: referenceAudioUrl
-            ? [{ audio: referenceAudioUrl, text: referenceText }]
-            : [],
-        reference_id: referenceId,
+    const requestData = buildSynthesisRequestData({
+        referenceId,
+        referenceAudioUrl,
+        referenceText,
         format,
-        latency: 'normal',
-        max_new_tokens: 1024,
-        chunk_length: 200,
-        top_p: 0.8,
-        repetition_penalty: 1.1,
-        temperature: 0.8,
-        streaming: false,
-        use_memory_cache: 'on',
-    }
+        text,
+    })
 
     const headers = {
         'content-type': 'application/json',
@@ -155,6 +149,13 @@ async function main() {
         throw new Error(`Unsupported --format "${options.format}"`)
     }
 
+    if (!options.referenceId && (!options.referenceAudioUrl || !options.referenceText)) {
+        throw new Error('Provide --reference-id or both --reference-audio-url and --reference-text')
+    }
+
+    const voiceMode = options.referenceId ? 'reference-id' : 'reference-audio'
+    console.log(`Voice mode: ${voiceMode}${options.referenceId ? ` (${options.referenceId})` : ''}`)
+
     const outputDir = path.resolve(options.outputDir)
     await mkdir(outputDir, { recursive: true })
 
@@ -169,6 +170,7 @@ async function main() {
         const filename = `${String(index).padStart(3, '0')}-${slugify(text)}.${options.format}`
         const destination = path.join(outputDir, filename)
 
+        console.log(formatReferenceIdLog(options.referenceId))
         const started = Date.now()
         const audio = await synthesizeText({
             ttsUrl: options.ttsUrl,
@@ -190,7 +192,7 @@ async function main() {
     const manifestPath = path.join(outputDir, 'world1_manifest.json')
     await writeFile(
         manifestPath,
-        `${JSON.stringify({ world: 1, referenceId: options.referenceId, referenceAudioUrl: options.referenceAudioUrl, referenceText: options.referenceText, count: manifest.length, entries: manifest }, null, 2)}\n`,
+        `${JSON.stringify({ world: 1, voiceMode, referenceId: options.referenceId, referenceAudioUrl: options.referenceAudioUrl, referenceText: options.referenceText, count: manifest.length, entries: manifest }, null, 2)}\n`,
     )
 
     console.log(`Done. Manifest: ${manifestPath}`)
