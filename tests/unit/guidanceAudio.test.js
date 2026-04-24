@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
     isTapGuidanceMessage,
     isWorldOneBasicsLevel,
+    resolveGuidanceAudioSrc,
     shouldAutoPlayTapGuidance,
 } from '../../src/lib/guidanceAudio'
 
@@ -27,5 +28,12 @@ describe('guidance audio helpers', () => {
         expect(shouldAutoPlayTapGuidance(worldOneLevel, 'Tap A')).toBe(true)
         expect(shouldAutoPlayTapGuidance(worldOneLevel, 'Try A')).toBe(false)
         expect(shouldAutoPlayTapGuidance(worldThreeLevel, 'Tap A')).toBe(false)
+    })
+
+    it('resolves tap guidance messages to world one tap audio files', async () => {
+        await expect(resolveGuidanceAudioSrc('Tap A')).resolves.toBe('/audio/tap-a.wav')
+        await expect(resolveGuidanceAudioSrc('Tap ;')).resolves.toBe('/audio/tap-semicolon.wav')
+        await expect(resolveGuidanceAudioSrc('Tap SPACE')).resolves.toBe('/audio/tap-space.wav')
+        await expect(resolveGuidanceAudioSrc('Try A')).resolves.toBeNull()
     })
 })
