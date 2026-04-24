@@ -1,14 +1,21 @@
 import { expect } from '@playwright/test'
 
 const DISPLAY_TO_KEY = {
-    A: 'a',
-    S: 's',
-    D: 'd',
-    F: 'f',
-    J: 'j',
-    K: 'k',
-    L: 'l',
     ';': ';',
+    ',': ',',
+    SPACE: 'Space',
+}
+
+function toKeyboardKey(label) {
+    if (DISPLAY_TO_KEY[label]) {
+        return DISPLAY_TO_KEY[label]
+    }
+
+    if (/^[A-Z]$/.test(label)) {
+        return label.toLowerCase()
+    }
+
+    return null
 }
 
 export function makeTestUser() {
@@ -165,7 +172,7 @@ export async function completeCurrentLevel(
             continue
         }
 
-        const key = DISPLAY_TO_KEY[label]
+        const key = toKeyboardKey(label)
         if (!key) {
             throw new Error(`Unsupported visible target label: "${label}"`)
         }
