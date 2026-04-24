@@ -14,7 +14,8 @@
     "test:e2e:headed": "playwright test --headed --reporter=list",
     "test:e2e:cleanup": "node tests/e2e/global.teardown.js",
     "test:all": "echo \"Running unit tests...\" && npm run test:unit && echo \"Running end-to-end tests...\" && npm run test:e2e",
-    "generate:audio": "node scripts/generate_world1_audio_fish_speech.mjs"
+    "generate:audio": "node scripts/generate_world1_audio_fish_speech.mjs",
+    "test-fish-speech-sarah-model-id": "node scripts/test_fish_speech_sarah_model_id.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.0",
