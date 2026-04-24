@@ -9,6 +9,8 @@ const DISPLAY_TO_KEY = {
     K: 'k',
     L: 'l',
     ';': ';',
+    ',': ',',
+    SPACE: 'Space',
 }
 
 export function makeTestUser() {
