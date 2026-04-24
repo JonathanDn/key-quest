@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
@@ -171,6 +171,7 @@ describe('generate_world1_audio_fish_speech script', () => {
         const files = await readdir(outputDir)
         const audioFiles = files.filter((file) => file.endsWith('.wav'))
         expect(audioFiles).toHaveLength(WORLD1_AUDIO_TEXT.tapGuidance.length)
+        expect(audioFiles.every((file) => file.includes('-success.wav'))).toBe(true)
         expect(files).toContain('world1_manifest.json')
 
         const manifest = JSON.parse(await readFile(path.join(outputDir, 'world1_manifest.json'), 'utf8'))
@@ -195,6 +196,34 @@ describe('generate_world1_audio_fish_speech script', () => {
         expect(result.code).toBe(1)
         expect(mock.requests).toHaveLength(1)
         expect(result.stderr).toContain('Failed for text "Tap A": 500')
+    })
+
+    it('skips clips that already have -success files and regenerates only missing success suffix', async () => {
+        const mock = await createMockTtsServer()
+        cleanups.push(mock.close)
+
+        const outputDir = await mkdtemp(path.join(os.tmpdir(), 'world1-audio-resume-'))
+        cleanups.push(() => rm(outputDir, { recursive: true, force: true }))
+
+        const firstSuccess = path.join(outputDir, '001-tap-a-success.wav')
+        const secondWithoutSuccess = path.join(outputDir, '002-tap-s.wav')
+        await Promise.all([
+            writeFile(firstSuccess, Buffer.from('existing')),
+            writeFile(secondWithoutSuccess, Buffer.from('stale')),
+        ])
+
+        const result = await runScript([
+            '--tts-url', mock.ttsUrl,
+            '--output-dir', outputDir,
+            '--reference-id', '933563129e564b19a115bedd57b7406a',
+        ])
+
+        expect(result.code).toBe(0)
+        expect(mock.requests).toHaveLength(WORLD1_AUDIO_TEXT.tapGuidance.length - 1)
+        const files = await readdir(outputDir)
+        expect(files).toContain('001-tap-a-success.wav')
+        expect(files).toContain('002-tap-s-success.wav')
+        expect(files).not.toContain('002-tap-s.wav')
     })
 
     it('fails when no reference id is provided', async () => {

@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { access, mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -111,6 +111,12 @@ function toSpokenGuidanceText(text) {
     return text
 }
 
+function withSuccessSuffix(filePath, format) {
+    return filePath.endsWith(`.${format}`)
+        ? filePath.slice(0, -(format.length + 1)) + `-success.${format}`
+        : `${filePath}-success`
+}
+
 function formatYellowLog(message) {
     const ansiYellow = '\x1b[33m'
     const ansiReset = '\x1b[0m'
@@ -214,8 +220,24 @@ async function main() {
             const text = texts[i]
             const spokenText = toSpokenGuidanceText(text)
             const index = i + 1
-            const filename = `${String(index).padStart(3, '0')}-${slugify(text)}.${options.format}`
-            const destination = path.join(outputDir, filename)
+            const baseFilename = `${String(index).padStart(3, '0')}-${slugify(text)}.${options.format}`
+            const successFilename = withSuccessSuffix(baseFilename, options.format)
+            const baseDestination = path.join(outputDir, baseFilename)
+            const successDestination = path.join(outputDir, successFilename)
+
+            let successExists = false
+            try {
+                await access(successDestination)
+                successExists = true
+            } catch {
+                successExists = false
+            }
+
+            if (successExists) {
+                console.log(`[${String(index).padStart(3, '0')}/${texts.length}] ${successFilename} (already -success, skipping)`)
+                manifest.push({ text, spokenText, file: successFilename, status: 'skipped' })
+                continue
+            }
 
             console.log(formatReferenceIdLog(options.referenceId))
             const started = Date.now()
@@ -228,11 +250,12 @@ async function main() {
                 seed: options.seed,
             })
 
-            await writeFile(destination, audio)
+            await writeFile(successDestination, audio)
+            await rm(baseDestination, { force: true })
             const elapsedSeconds = ((Date.now() - started) / 1000).toFixed(2)
-            console.log(`[${String(index).padStart(3, '0')}/${texts.length}] ${filename} (${elapsedSeconds}s)`)
+            console.log(`[${String(index).padStart(3, '0')}/${texts.length}] ${successFilename} (${elapsedSeconds}s)`)
 
-            manifest.push({ text, spokenText, file: filename })
+            manifest.push({ text, spokenText, file: successFilename, status: 'generated' })
         }
 
         const manifestPath = path.join(outputDir, 'world1_manifest.json')
