@@ -7,9 +7,12 @@ import { buildSynthesisRequestData, formatReferenceIdLog } from './world1AudioGe
 
 const DEFAULT_OUTPUT_DIR = './tmp/world1-tap-audio'
 const DEFAULT_TTS_URL = 'http://127.0.0.1:8080/v1/tts'
-const DEFAULT_REFERENCE_ID = process.env.FISH_SPEECH_REFERENCE_ID || null
-const DEFAULT_REFERENCE_AUDIO_URL = 'https://dn710702.ca.archive.org/0/items/real_mother_goose_ah_librivox/mothergoose_01_anonymous_64kb.mp3'
-const DEFAULT_REFERENCE_TEXT = 'Mother Goose reference narration sample'
+
+// Optional: set this once to always use a stable pre-created reference profile.
+const SARAH_REFERENCE_ID = '933563129e564b19a115bedd57b7406a'
+const SCRIPT_DEFAULT_REFERENCE_ID = SARAH_REFERENCE_ID
+const DEFAULT_REFERENCE_ID = process.env.FISH_SPEECH_REFERENCE_ID || SCRIPT_DEFAULT_REFERENCE_ID || null
+const DEFAULT_SEED = 42
 
 function parseArgs(argv) {
     const options = {
@@ -17,8 +20,7 @@ function parseArgs(argv) {
         ttsUrl: DEFAULT_TTS_URL,
         apiKey: null,
         referenceId: DEFAULT_REFERENCE_ID,
-        referenceAudioUrl: DEFAULT_REFERENCE_AUDIO_URL,
-        referenceText: DEFAULT_REFERENCE_TEXT,
+        seed: DEFAULT_SEED,
         format: 'wav',
     }
 
@@ -55,21 +57,20 @@ function parseArgs(argv) {
             continue
         }
 
-        if (arg === '--reference-audio-url') {
-            options.referenceAudioUrl = value
-            i += 1
-            continue
-        }
-
-        if (arg === '--reference-text') {
-            options.referenceText = value
-            i += 1
-            continue
-        }
-
         if (arg === '--format') {
             options.format = value
             i += 1
+            continue
+        }
+
+        if (arg === '--seed') {
+            options.seed = Number(value)
+            i += 1
+            continue
+        }
+
+        if (arg === '--dry-run') {
+            options.dryRun = true
             continue
         }
 
@@ -89,15 +90,13 @@ Options:
   --output-dir <path>    Output folder for audio files. Default: ./tmp/world1-tap-audio
   --tts-url <url>        fish-speech TTS endpoint. Default: http://127.0.0.1:8080/v1/tts
   --api-key <token>      Optional bearer token when server auth is enabled.
-  --reference-id <id>    fish-speech reference ID. Default: $FISH_SPEECH_REFERENCE_ID
-  --reference-audio-url  Reference voice audio URL.
-                          Default: https://dn710702.ca.archive.org/0/items/real_mother_goose_ah_librivox/mothergoose_01_anonymous_64kb.mp3
-  --reference-text       Transcript/label required by fish-speech for the reference sample.
-                          Default: Mother Goose reference narration sample
+  --reference-id <id>    fish-speech reference ID. Default: $FISH_SPEECH_REFERENCE_ID or SCRIPT_DEFAULT_REFERENCE_ID
+  --seed <number>        Optional deterministic seed for output stability. Default: 42
   --format <fmt>         One of: wav, mp3, opus, pcm. Default: wav
+  --dry-run              Print resolved config/command and exit without calling TTS.
   --help, -h             Show this help text.
 
-For stable voice across files, prefer a pre-created reference ID.
+This script uses reference-id mode only (no reference-audio fallback).
 `)
 }
 
@@ -106,13 +105,42 @@ function slugify(text) {
     return normalized || 'clip'
 }
 
-async function synthesizeText({ ttsUrl, apiKey, referenceId, referenceAudioUrl, referenceText, format, text }) {
+function formatYellowLog(message) {
+    const ansiYellow = '\x1b[33m'
+    const ansiReset = '\x1b[0m'
+    return `${ansiYellow}${message}${ansiReset}`
+}
+
+function formatMagentaLog(message) {
+    const ansiMagenta = '\x1b[35m'
+    const ansiReset = '\x1b[0m'
+    return `${ansiMagenta}${message}${ansiReset}`
+}
+
+function buildCommandPreview(options) {
+    const segments = [
+        'node scripts/generate_world1_audio_fish_speech.mjs',
+        `--output-dir "${options.outputDir}"`,
+        `--tts-url "${options.ttsUrl}"`,
+        `--seed ${options.seed}`,
+        `--format "${options.format}"`,
+    ]
+
+    if (options.apiKey) {
+        segments.push('--api-key "<redacted>"')
+    }
+
+    segments.push(`--reference-id "${options.referenceId}"`)
+
+    return segments.join(' ')
+}
+
+async function synthesizeText({ ttsUrl, apiKey, referenceId, format, text, seed }) {
     const requestData = buildSynthesisRequestData({
         referenceId,
-        referenceAudioUrl,
-        referenceText,
         format,
         text,
+        seed,
     })
 
     const headers = {
@@ -149,56 +177,70 @@ async function main() {
         throw new Error(`Unsupported --format "${options.format}"`)
     }
 
-    if (!options.referenceId && (!options.referenceAudioUrl || !options.referenceText)) {
-        throw new Error('Provide --reference-id or both --reference-audio-url and --reference-text')
+    if (!Number.isFinite(options.seed)) {
+        throw new Error('Provide --seed as a number')
     }
 
-    const voiceMode = options.referenceId ? 'reference-id' : 'reference-audio'
-    console.log(`Voice mode: ${voiceMode}${options.referenceId ? ` (${options.referenceId})` : ''}`)
+    if (!options.referenceId) {
+        throw new Error('Provide --reference-id or set FISH_SPEECH_REFERENCE_ID/SCRIPT_DEFAULT_REFERENCE_ID')
+    }
+
+    console.log(formatYellowLog(`Detected reference ID to be passed: ${options.referenceId || 'none'}`))
+    console.log(formatMagentaLog(`Actual command sent: ${buildCommandPreview(options)}`))
+
+    if (options.dryRun) {
+        console.log(formatYellowLog('Dry run enabled; exiting before TTS requests.'))
+        return
+    }
+
+    const voiceMode = 'reference-id'
+    console.log(`Voice mode: ${voiceMode} (${options.referenceId})`)
 
     const outputDir = path.resolve(options.outputDir)
     await mkdir(outputDir, { recursive: true })
 
-    const texts = WORLD1_AUDIO_TEXT.tapGuidance
-    const manifest = []
+        const texts = WORLD1_AUDIO_TEXT.tapGuidance
+        const manifest = []
 
-    console.log(`Generating ${texts.length} clips into ${outputDir}`)
+        console.log(`Generating ${texts.length} clips into ${outputDir}`)
 
-    for (let i = 0; i < texts.length; i += 1) {
-        const text = texts[i]
-        const index = i + 1
-        const filename = `${String(index).padStart(3, '0')}-${slugify(text)}.${options.format}`
-        const destination = path.join(outputDir, filename)
+        for (let i = 0; i < texts.length; i += 1) {
+            const text = texts[i]
+            const index = i + 1
+            const filename = `${String(index).padStart(3, '0')}-${slugify(text)}.${options.format}`
+            const destination = path.join(outputDir, filename)
 
-        console.log(formatReferenceIdLog(options.referenceId))
-        const started = Date.now()
-        const audio = await synthesizeText({
-            ttsUrl: options.ttsUrl,
-            apiKey: options.apiKey,
-            referenceId: options.referenceId,
-            referenceAudioUrl: options.referenceAudioUrl,
-            referenceText: options.referenceText,
-            format: options.format,
-            text,
-        })
+            console.log(formatReferenceIdLog(options.referenceId))
+            const started = Date.now()
+            const audio = await synthesizeText({
+                ttsUrl: options.ttsUrl,
+                apiKey: options.apiKey,
+                referenceId: options.referenceId,
+                format: options.format,
+                text,
+                seed: options.seed,
+            })
 
-        await writeFile(destination, audio)
-        const elapsedSeconds = ((Date.now() - started) / 1000).toFixed(2)
-        console.log(`[${String(index).padStart(3, '0')}/${texts.length}] ${filename} (${elapsedSeconds}s)`)
+            await writeFile(destination, audio)
+            const elapsedSeconds = ((Date.now() - started) / 1000).toFixed(2)
+            console.log(`[${String(index).padStart(3, '0')}/${texts.length}] ${filename} (${elapsedSeconds}s)`)
 
-        manifest.push({ text, file: filename })
-    }
+            manifest.push({ text, file: filename })
+        }
 
-    const manifestPath = path.join(outputDir, 'world1_manifest.json')
-    await writeFile(
-        manifestPath,
-        `${JSON.stringify({ world: 1, voiceMode, referenceId: options.referenceId, referenceAudioUrl: options.referenceAudioUrl, referenceText: options.referenceText, count: manifest.length, entries: manifest }, null, 2)}\n`,
-    )
+        const manifestPath = path.join(outputDir, 'world1_manifest.json')
+        await writeFile(
+            manifestPath,
+            `${JSON.stringify({ world: 1, voiceMode, referenceId: options.referenceId, seed: options.seed, count: manifest.length, entries: manifest }, null, 2)}\n`,
+        )
 
-    console.log(`Done. Manifest: ${manifestPath}`)
+        console.log(`Done. Manifest: ${manifestPath}`)
 }
 
 main().catch((error) => {
     console.error(error.message)
+    if (error.cause?.message) {
+        console.error(`Cause: ${error.cause.message}`)
+    }
     process.exitCode = 1
 })
