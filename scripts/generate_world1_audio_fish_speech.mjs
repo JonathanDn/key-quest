@@ -1,14 +1,16 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { access, mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
+import { pathToFileURL } from 'node:url'
 
 import { WORLD1_AUDIO_TEXT } from '../src/game/content/world1AudioText.js'
 import { buildSynthesisRequestData, formatReferenceIdLog } from './world1AudioGeneration.js'
 
 const DEFAULT_OUTPUT_DIR = './tmp/world1-tap-audio'
 const DEFAULT_TTS_URL = 'http://127.0.0.1:8080/v1/tts'
+
 const DEFAULT_REFERENCE_ID = process.env.FISH_SPEECH_REFERENCE_ID || null
-const DEFAULT_REFERENCE_AUDIO_URL = 'https://dn710702.ca.archive.org/0/items/real_mother_goose_ah_librivox/mothergoose_01_anonymous_64kb.mp3'
+const DEFAULT_REFERENCE_AUDIO_URL = './public/mothergoose-sample.mp3'
 const DEFAULT_REFERENCE_TEXT = 'Mother Goose reference narration sample'
 
 function parseArgs(argv) {
@@ -90,8 +92,8 @@ Options:
   --tts-url <url>        fish-speech TTS endpoint. Default: http://127.0.0.1:8080/v1/tts
   --api-key <token>      Optional bearer token when server auth is enabled.
   --reference-id <id>    fish-speech reference ID. Default: $FISH_SPEECH_REFERENCE_ID
-  --reference-audio-url  Reference voice audio URL.
-                          Default: https://dn710702.ca.archive.org/0/items/real_mother_goose_ah_librivox/mothergoose_01_anonymous_64kb.mp3
+  --reference-audio-url  Reference voice audio URL or local file path.
+                          Default: ./public/mothergoose-sample.mp3 (local paths are converted to file:// URLs)
   --reference-text       Transcript/label required by fish-speech for the reference sample.
                           Default: Mother Goose reference narration sample
   --format <fmt>         One of: wav, mp3, opus, pcm. Default: wav
@@ -104,6 +106,48 @@ For stable voice across files, prefer a pre-created reference ID.
 function slugify(text) {
     const normalized = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
     return normalized || 'clip'
+}
+
+function formatYellowLog(message) {
+    const ansiYellow = '\x1b[33m'
+    const ansiReset = '\x1b[0m'
+    return `${ansiYellow}${message}${ansiReset}`
+}
+
+function buildCommandPreview(options) {
+    const segments = [
+        'node scripts/generate_world1_audio_fish_speech.mjs',
+        `--output-dir "${options.outputDir}"`,
+        `--tts-url "${options.ttsUrl}"`,
+        `--format "${options.format}"`,
+    ]
+
+    if (options.apiKey) {
+        segments.push('--api-key "<redacted>"')
+    }
+
+    if (options.referenceId) {
+        segments.push(`--reference-id "${options.referenceId}"`)
+    } else {
+        segments.push(`--reference-audio-url "${options.referenceAudioUrl}"`)
+        segments.push(`--reference-text "${options.referenceText}"`)
+    }
+
+    return segments.join(' ')
+}
+
+async function resolveReferenceAudioInput(referenceAudioUrl) {
+    if (!referenceAudioUrl) {
+        return referenceAudioUrl
+    }
+
+    if (referenceAudioUrl.startsWith('http://') || referenceAudioUrl.startsWith('https://') || referenceAudioUrl.startsWith('file://')) {
+        return referenceAudioUrl
+    }
+
+    const absolutePath = path.resolve(referenceAudioUrl)
+    await access(absolutePath)
+    return pathToFileURL(absolutePath).href
 }
 
 async function synthesizeText({ ttsUrl, apiKey, referenceId, referenceAudioUrl, referenceText, format, text }) {
@@ -152,6 +196,13 @@ async function main() {
     if (!options.referenceId && (!options.referenceAudioUrl || !options.referenceText)) {
         throw new Error('Provide --reference-id or both --reference-audio-url and --reference-text')
     }
+
+    if (!options.referenceId) {
+        options.referenceAudioUrl = await resolveReferenceAudioInput(options.referenceAudioUrl)
+    }
+
+    console.log(formatYellowLog(`Detected reference ID to be passed: ${options.referenceId || 'none'}`))
+    console.log(formatYellowLog(`About to run: ${buildCommandPreview(options)}`))
 
     const voiceMode = options.referenceId ? 'reference-id' : 'reference-audio'
     console.log(`Voice mode: ${voiceMode}${options.referenceId ? ` (${options.referenceId})` : ''}`)
