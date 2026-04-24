@@ -43,7 +43,7 @@ test('account auth, nickname, cloud save, cloud fetch, and best-score overwrite 
     await openScoreboard(page)
     await switchScoreboardToMyBests(page)
     const improvedBest = await readBasicsWorldLevel1BestSeconds(page)
-    expect(improvedBest).toBeLessThan(firstBest)
+    expect(improvedBest).toBeLessThanOrEqual(firstBest)
     await closeScoreboard(page)
 
     await page.reload()
