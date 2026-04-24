@@ -75,6 +75,11 @@ function parseArgs(argv) {
             continue
         }
 
+        if (arg === '--dry-run') {
+            options.dryRun = true
+            continue
+        }
+
 
         throw new Error(`Unknown argument: ${arg}`)
     }
@@ -97,6 +102,7 @@ Options:
   --reference-text       Transcript/label required by fish-speech for the reference sample.
                           Default: Mother Goose reference narration sample
   --format <fmt>         One of: wav, mp3, opus, pcm. Default: wav
+  --dry-run              Print resolved config/command and exit without calling TTS.
   --help, -h             Show this help text.
 
 For stable voice across files, prefer a pre-created reference ID.
@@ -204,6 +210,11 @@ async function main() {
     console.log(formatYellowLog(`Detected reference ID to be passed: ${options.referenceId || 'none'}`))
     console.log(formatYellowLog(`About to run: ${buildCommandPreview(options)}`))
 
+    if (options.dryRun) {
+        console.log(formatYellowLog('Dry run enabled; exiting before TTS requests.'))
+        return
+    }
+
     const voiceMode = options.referenceId ? 'reference-id' : 'reference-audio'
     console.log(`Voice mode: ${voiceMode}${options.referenceId ? ` (${options.referenceId})` : ''}`)
 
@@ -251,5 +262,8 @@ async function main() {
 
 main().catch((error) => {
     console.error(error.message)
+    if (error.cause?.message) {
+        console.error(`Cause: ${error.cause.message}`)
+    }
     process.exitCode = 1
 })
