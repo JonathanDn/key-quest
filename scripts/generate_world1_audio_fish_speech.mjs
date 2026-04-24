@@ -10,7 +10,11 @@ import { buildSynthesisRequestData, formatReferenceIdLog } from './world1AudioGe
 const DEFAULT_OUTPUT_DIR = './tmp/world1-tap-audio'
 const DEFAULT_TTS_URL = 'http://127.0.0.1:8080/v1/tts'
 
-const DEFAULT_REFERENCE_ID = process.env.FISH_SPEECH_REFERENCE_ID || null
+// Optional: set this once to always use a stable pre-created reference profile.
+// Leave as empty string to continue using reference-audio mode by default.
+const SARAH_REFERENCE_ID = '933563129e564b19a115bedd57b7406a'
+const SCRIPT_DEFAULT_REFERENCE_ID = SARAH_REFERENCE_ID
+const DEFAULT_REFERENCE_ID = process.env.FISH_SPEECH_REFERENCE_ID || SCRIPT_DEFAULT_REFERENCE_ID || null
 const DEFAULT_REFERENCE_AUDIO_URL = './public/mothergoose-sample.mp3'
 const DEFAULT_REFERENCE_TEXT = 'Mother Goose reference narration sample'
 
@@ -97,7 +101,7 @@ Options:
   --output-dir <path>    Output folder for audio files. Default: ./tmp/world1-tap-audio
   --tts-url <url>        fish-speech TTS endpoint. Default: http://127.0.0.1:8080/v1/tts
   --api-key <token>      Optional bearer token when server auth is enabled.
-  --reference-id <id>    fish-speech reference ID. Default: $FISH_SPEECH_REFERENCE_ID
+  --reference-id <id>    fish-speech reference ID. Default: $FISH_SPEECH_REFERENCE_ID or SCRIPT_DEFAULT_REFERENCE_ID
   --reference-audio-url  Reference voice audio URL or local file path.
                           Default: ./public/mothergoose-sample.mp3 (local paths are converted to file:// URLs)
   --reference-text       Transcript/label required by fish-speech for the reference sample.
@@ -234,7 +238,10 @@ async function synthesizeText({ ttsUrl, apiKey, referenceId, referenceAudioUrl, 
 
     if (!response.ok) {
         const detail = await response.text()
-        throw new Error(`Failed for text "${text}": ${response.status} ${detail}`)
+        const hint = !referenceId
+            ? ' (reference-audio mode failed; try setting FISH_SPEECH_REFERENCE_ID or SCRIPT_DEFAULT_REFERENCE_ID)'
+            : ''
+        throw new Error(`Failed for text "${text}": ${response.status} ${detail}${hint}`)
     }
 
     return Buffer.from(await response.arrayBuffer())
