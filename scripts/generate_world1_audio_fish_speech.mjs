@@ -1,7 +1,8 @@
-import { access, mkdir, writeFile } from 'node:fs/promises'
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { createServer } from 'node:http'
 import path from 'node:path'
 import process from 'node:process'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath } from 'node:url'
 
 import { WORLD1_AUDIO_TEXT } from '../src/game/content/world1AudioText.js'
 import { buildSynthesisRequestData, formatReferenceIdLog } from './world1AudioGeneration.js'
@@ -142,18 +143,70 @@ function buildCommandPreview(options) {
     return segments.join(' ')
 }
 
+function getContentTypeFromPath(filePath) {
+    const ext = path.extname(filePath).toLowerCase()
+    if (ext === '.mp3') return 'audio/mpeg'
+    if (ext === '.wav') return 'audio/wav'
+    if (ext === '.opus') return 'audio/ogg'
+    return 'application/octet-stream'
+}
+
+async function startReferenceAudioServer(filePath) {
+    const contentType = getContentTypeFromPath(filePath)
+    const encodedName = encodeURIComponent(path.basename(filePath))
+    const fileBuffer = await readFile(filePath)
+
+    const server = createServer((req, res) => {
+        if (req.method !== 'GET' || req.url !== `/${encodedName}`) {
+            res.statusCode = 404
+            res.end('Not found')
+            return
+        }
+
+        res.statusCode = 200
+        res.setHeader('content-type', contentType)
+        res.setHeader('cache-control', 'no-store')
+        res.end(fileBuffer)
+    })
+
+    await new Promise((resolve, reject) => {
+        server.once('error', reject)
+        server.listen(0, '127.0.0.1', resolve)
+    })
+
+    const address = server.address()
+    const port = typeof address === 'object' && address ? address.port : null
+    const referenceAudioUrl = `http://127.0.0.1:${port}/${encodedName}`
+
+    return {
+        referenceAudioUrl,
+        close: () =>
+            new Promise((resolve, reject) => {
+                server.close((error) => {
+                    if (error) {
+                        reject(error)
+                        return
+                    }
+                    resolve()
+                })
+            }),
+    }
+}
+
 async function resolveReferenceAudioInput(referenceAudioUrl) {
     if (!referenceAudioUrl) {
-        return referenceAudioUrl
+        return { referenceAudioUrl, close: async () => {} }
     }
 
-    if (referenceAudioUrl.startsWith('http://') || referenceAudioUrl.startsWith('https://') || referenceAudioUrl.startsWith('file://')) {
-        return referenceAudioUrl
+    if (referenceAudioUrl.startsWith('http://') || referenceAudioUrl.startsWith('https://')) {
+        return { referenceAudioUrl, close: async () => {} }
     }
 
-    const absolutePath = path.resolve(referenceAudioUrl)
+    const absolutePath = referenceAudioUrl.startsWith('file://')
+        ? fileURLToPath(referenceAudioUrl)
+        : path.resolve(referenceAudioUrl)
     await access(absolutePath)
-    return pathToFileURL(absolutePath).href
+    return startReferenceAudioServer(absolutePath)
 }
 
 async function synthesizeText({ ttsUrl, apiKey, referenceId, referenceAudioUrl, referenceText, format, text }) {
@@ -203,8 +256,11 @@ async function main() {
         throw new Error('Provide --reference-id or both --reference-audio-url and --reference-text')
     }
 
+    let closeReferenceAudioServer = async () => {}
     if (!options.referenceId) {
-        options.referenceAudioUrl = await resolveReferenceAudioInput(options.referenceAudioUrl)
+        const resolvedReference = await resolveReferenceAudioInput(options.referenceAudioUrl)
+        options.referenceAudioUrl = resolvedReference.referenceAudioUrl
+        closeReferenceAudioServer = resolvedReference.close
     }
 
     console.log(formatYellowLog(`Detected reference ID to be passed: ${options.referenceId || 'none'}`))
@@ -212,52 +268,57 @@ async function main() {
 
     if (options.dryRun) {
         console.log(formatYellowLog('Dry run enabled; exiting before TTS requests.'))
+        await closeReferenceAudioServer()
         return
     }
 
-    const voiceMode = options.referenceId ? 'reference-id' : 'reference-audio'
-    console.log(`Voice mode: ${voiceMode}${options.referenceId ? ` (${options.referenceId})` : ''}`)
+    try {
+        const voiceMode = options.referenceId ? 'reference-id' : 'reference-audio'
+        console.log(`Voice mode: ${voiceMode}${options.referenceId ? ` (${options.referenceId})` : ''}`)
 
-    const outputDir = path.resolve(options.outputDir)
-    await mkdir(outputDir, { recursive: true })
+        const outputDir = path.resolve(options.outputDir)
+        await mkdir(outputDir, { recursive: true })
 
-    const texts = WORLD1_AUDIO_TEXT.tapGuidance
-    const manifest = []
+        const texts = WORLD1_AUDIO_TEXT.tapGuidance
+        const manifest = []
 
-    console.log(`Generating ${texts.length} clips into ${outputDir}`)
+        console.log(`Generating ${texts.length} clips into ${outputDir}`)
 
-    for (let i = 0; i < texts.length; i += 1) {
-        const text = texts[i]
-        const index = i + 1
-        const filename = `${String(index).padStart(3, '0')}-${slugify(text)}.${options.format}`
-        const destination = path.join(outputDir, filename)
+        for (let i = 0; i < texts.length; i += 1) {
+            const text = texts[i]
+            const index = i + 1
+            const filename = `${String(index).padStart(3, '0')}-${slugify(text)}.${options.format}`
+            const destination = path.join(outputDir, filename)
 
-        console.log(formatReferenceIdLog(options.referenceId))
-        const started = Date.now()
-        const audio = await synthesizeText({
-            ttsUrl: options.ttsUrl,
-            apiKey: options.apiKey,
-            referenceId: options.referenceId,
-            referenceAudioUrl: options.referenceAudioUrl,
-            referenceText: options.referenceText,
-            format: options.format,
-            text,
-        })
+            console.log(formatReferenceIdLog(options.referenceId))
+            const started = Date.now()
+            const audio = await synthesizeText({
+                ttsUrl: options.ttsUrl,
+                apiKey: options.apiKey,
+                referenceId: options.referenceId,
+                referenceAudioUrl: options.referenceAudioUrl,
+                referenceText: options.referenceText,
+                format: options.format,
+                text,
+            })
 
-        await writeFile(destination, audio)
-        const elapsedSeconds = ((Date.now() - started) / 1000).toFixed(2)
-        console.log(`[${String(index).padStart(3, '0')}/${texts.length}] ${filename} (${elapsedSeconds}s)`)
+            await writeFile(destination, audio)
+            const elapsedSeconds = ((Date.now() - started) / 1000).toFixed(2)
+            console.log(`[${String(index).padStart(3, '0')}/${texts.length}] ${filename} (${elapsedSeconds}s)`)
 
-        manifest.push({ text, file: filename })
+            manifest.push({ text, file: filename })
+        }
+
+        const manifestPath = path.join(outputDir, 'world1_manifest.json')
+        await writeFile(
+            manifestPath,
+            `${JSON.stringify({ world: 1, voiceMode, referenceId: options.referenceId, referenceAudioUrl: options.referenceAudioUrl, referenceText: options.referenceText, count: manifest.length, entries: manifest }, null, 2)}\n`,
+        )
+
+        console.log(`Done. Manifest: ${manifestPath}`)
+    } finally {
+        await closeReferenceAudioServer()
     }
-
-    const manifestPath = path.join(outputDir, 'world1_manifest.json')
-    await writeFile(
-        manifestPath,
-        `${JSON.stringify({ world: 1, voiceMode, referenceId: options.referenceId, referenceAudioUrl: options.referenceAudioUrl, referenceText: options.referenceText, count: manifest.length, entries: manifest }, null, 2)}\n`,
-    )
-
-    console.log(`Done. Manifest: ${manifestPath}`)
 }
 
 main().catch((error) => {
