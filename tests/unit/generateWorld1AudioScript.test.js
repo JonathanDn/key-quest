@@ -33,6 +33,35 @@ function runScript(args) {
     })
 }
 
+function runScriptWithoutDefaultReferenceId(args) {
+    return new Promise((resolve, reject) => {
+        const child = spawn('node', ['scripts/generate_world1_audio_fish_speech.mjs', ...args], {
+            cwd: path.resolve('.'),
+            stdio: ['ignore', 'pipe', 'pipe'],
+            env: {
+                ...process.env,
+                FISH_SPEECH_REFERENCE_ID: '',
+            },
+        })
+
+        let stdout = ''
+        let stderr = ''
+
+        child.stdout.on('data', (chunk) => {
+            stdout += chunk.toString()
+        })
+
+        child.stderr.on('data', (chunk) => {
+            stderr += chunk.toString()
+        })
+
+        child.on('error', reject)
+        child.on('close', (code) => {
+            resolve({ code, stdout, stderr })
+        })
+    })
+}
+
 async function createMockTtsServer({ failFirst = false } = {}) {
     const requests = []
     let requestCount = 0
@@ -134,7 +163,8 @@ describe('generate_world1_audio_fish_speech script', () => {
         expect(result.code).toBe(0)
         expect(mock.requests).toHaveLength(WORLD1_AUDIO_TEXT.tapGuidance.length)
         expect(mock.requests.every((request) => request.reference_id === referenceId)).toBe(true)
-        expect(mock.requests.every((request) => Array.isArray(request.references) && request.references.length === 0)).toBe(true)
+        expect(mock.requests.every((request) => request.references === undefined)).toBe(true)
+        expect(mock.requests.every((request) => request.seed === 42)).toBe(true)
 
         const files = await readdir(outputDir)
         const audioFiles = files.filter((file) => file.endsWith('.wav'))
@@ -165,24 +195,12 @@ describe('generate_world1_audio_fish_speech script', () => {
         expect(result.stderr).toContain('Failed for text "Tap A": 500')
     })
 
-    it('serves local reference audio as localhost URL when reference-id is absent', async () => {
-        const mock = await createMockTtsServer()
-        cleanups.push(mock.close)
-
-        const outputDir = await mkdtemp(path.join(os.tmpdir(), 'world1-audio-reference-audio-'))
-        cleanups.push(() => rm(outputDir, { recursive: true, force: true }))
-
-        const result = await runScript([
-            '--tts-url', mock.ttsUrl,
-            '--output-dir', outputDir,
+    it('fails when no reference id is provided', async () => {
+        const result = await runScriptWithoutDefaultReferenceId([
             '--reference-id', '',
-            '--reference-audio-url', './public/mothergoose-sample.mp3',
-            '--reference-text', 'Mother Goose reference narration sample',
         ])
 
-        expect(result.code).toBe(0)
-        expect(mock.requests).toHaveLength(WORLD1_AUDIO_TEXT.tapGuidance.length)
-        expect(mock.requests.every((request) => request.reference_id === '')).toBe(true)
-        expect(mock.requests.every((request) => request.references[0].audio.startsWith('http://127.0.0.1:'))).toBe(true)
+        expect(result.code).toBe(1)
+        expect(result.stderr).toContain('Provide --reference-id or set FISH_SPEECH_REFERENCE_ID/SCRIPT_DEFAULT_REFERENCE_ID')
     })
 })

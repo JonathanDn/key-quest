@@ -22,7 +22,24 @@ describe('world1 audio generation config', () => {
             referenceId,
             referenceId,
         ])
-        expect(requests.every((request) => request.references.length === 0)).toBe(true)
+        expect(requests.every((request) => request.references === undefined)).toBe(true)
+    })
+
+    it('passes the configured reference id for every world1 tap clip request', () => {
+        const referenceId = '933563129e564b19a115bedd57b7406a'
+        const requests = WORLD1_AUDIO_TEXT.tapGuidance.map((text) => (
+            buildSynthesisRequestData({
+                referenceId,
+                referenceAudioUrl: 'https://example.com/reference.mp3',
+                referenceText: 'sample',
+                format: 'wav',
+                text,
+            })
+        ))
+
+        expect(requests).toHaveLength(WORLD1_AUDIO_TEXT.tapGuidance.length)
+        expect(requests.every((request) => request.reference_id === referenceId)).toBe(true)
+        expect(requests.every((request) => request.references === undefined)).toBe(true)
     })
 
     it('passes the configured reference id for every world1 tap clip request', () => {
