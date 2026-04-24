@@ -114,7 +114,7 @@ function toSpokenGuidanceText(text) {
 function withSuccessSuffix(filePath, format) {
     return filePath.endsWith(`.${format}`)
         ? filePath.slice(0, -(format.length + 1)) + `-success.${format}`
-        : `${filePath}-success`
+        : `${filePath}`
 }
 
 function formatYellowLog(message) {
