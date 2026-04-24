@@ -165,6 +165,8 @@ describe('generate_world1_audio_fish_speech script', () => {
         expect(mock.requests.every((request) => request.reference_id === referenceId)).toBe(true)
         expect(mock.requests.every((request) => request.references === undefined)).toBe(true)
         expect(mock.requests.every((request) => request.seed === 42)).toBe(true)
+        expect(mock.requests.some((request) => request.text === 'Tap semicolon')).toBe(true)
+        expect(mock.requests.some((request) => request.text === 'Tap comma')).toBe(true)
 
         const files = await readdir(outputDir)
         const audioFiles = files.filter((file) => file.endsWith('.wav'))

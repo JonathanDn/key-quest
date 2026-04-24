@@ -105,6 +105,12 @@ function slugify(text) {
     return normalized || 'clip'
 }
 
+function toSpokenGuidanceText(text) {
+    if (text === 'Tap ;') return 'Tap semicolon'
+    if (text === 'Tap ,') return 'Tap comma'
+    return text
+}
+
 function formatYellowLog(message) {
     const ansiYellow = '\x1b[33m'
     const ansiReset = '\x1b[0m'
@@ -206,6 +212,7 @@ async function main() {
 
         for (let i = 0; i < texts.length; i += 1) {
             const text = texts[i]
+            const spokenText = toSpokenGuidanceText(text)
             const index = i + 1
             const filename = `${String(index).padStart(3, '0')}-${slugify(text)}.${options.format}`
             const destination = path.join(outputDir, filename)
@@ -217,7 +224,7 @@ async function main() {
                 apiKey: options.apiKey,
                 referenceId: options.referenceId,
                 format: options.format,
-                text,
+                text: spokenText,
                 seed: options.seed,
             })
 
@@ -225,7 +232,7 @@ async function main() {
             const elapsedSeconds = ((Date.now() - started) / 1000).toFixed(2)
             console.log(`[${String(index).padStart(3, '0')}/${texts.length}] ${filename} (${elapsedSeconds}s)`)
 
-            manifest.push({ text, file: filename })
+            manifest.push({ text, spokenText, file: filename })
         }
 
         const manifestPath = path.join(outputDir, 'world1_manifest.json')
